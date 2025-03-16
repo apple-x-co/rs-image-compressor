@@ -32,34 +32,35 @@ fn main() -> Result<()> {
         .with_guessed_format()
         .context("Failed to guess image format")?;
 
-    if let Some(image_format) = image_reader.format() {
-        let compressed_data = match image_format {
-            ImageFormat::Png => {
-                let mut input_file = File::open(input_path)
-                    .with_context(|| format!("Failed to open input file: {}", input_path))?;
-                let result = png_compressor(&mut input_file);
-                match result {
-                    Ok(data) => data,
-                    Err(e) => {
-                        return Err(anyhow!("PNG compression failed for file: {}. Error: {}", input_path, e));
-                    }
+    let image_format = match image_reader.format() {
+        Some(format) => format,
+        None => { return Err(anyhow::anyhow!("Could not determine image format")) }
+    };
+
+    let compressed_data = match image_format {
+        ImageFormat::Png => {
+            let mut input_file = File::open(input_path)
+                .with_context(|| format!("Failed to open input file: {}", input_path))?;
+            let result = png_compressor(&mut input_file);
+            match result {
+                Ok(data) => data,
+                Err(e) => {
+                    return Err(anyhow!("PNG compression failed for file: {}. Error: {}", input_path, e));
                 }
-            },
-            _ => {
-                return Err(anyhow!("Not supported image format"));
             }
-        };
+        },
+        _ => {
+            return Err(anyhow!("Not supported image format"));
+        }
+    };
 
-        let mut output_file = File::create(&args.output)
-            .with_context(|| format!("Failed to create output file: {}", args.output))?;
-        output_file
-            .write_all(&compressed_data)
-            .with_context(|| format!("Failed to write to output file: {}", args.output))?;
+    let mut output_file = File::create(&args.output)
+        .with_context(|| format!("Failed to create output file: {}", args.output))?;
+    output_file
+        .write_all(&compressed_data)
+        .with_context(|| format!("Failed to write to output file: {}", args.output))?;
 
-        println!("Compressed successfully and wrote to {}!", args.output);
-    } else {
-        return Err(anyhow::anyhow!("Could not determine image format"));
-    }
+    println!("Compressed successfully and wrote to {}!", args.output);
 
     Ok(())
 }

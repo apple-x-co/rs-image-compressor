@@ -4,11 +4,11 @@ use std::fs::File;
 use std::io::{BufReader, Read};
 
 // NOTE: Use "Oxipng"
-// NOTE: -o 値は最適化レベルを表し、1～6,maxの順に圧縮レベルが高くなります(デフォルトは2)。
-// NOTE: -i 0 or 1はインターレースの有無を表し、0で削除、1で有効化し、アルゴリズムはAdam7PNGを使用します。
-// NOTE: --strip safe or allは画像のメタデータを削除する設定です。safeは画像の描画に影響しないメタデータを削除します(-sでも同じ設定)。
-// NOTE: allは全てのメタデータを削除します。
-// NOTE: ちなみに--zopfliを加えることで、zopfliのアルゴリズムを用いてより効果的な圧縮もできます(ただし処理はかなり遅いのでリアルタイム処理には向いていない)。
+// TODO: -o 値は最適化レベルを表し、1～6,maxの順に圧縮レベルが高くなります(デフォルトは2)。
+// TODO: -i 0 or 1はインターレースの有無を表し、0で削除、1で有効化し、アルゴリズムはAdam7PNGを使用します。
+// TODO: --strip safe or allは画像のメタデータを削除する設定です。safeは画像の描画に影響しないメタデータを削除します(-sでも同じ設定)。
+// TODO: allは全てのメタデータを削除します。
+// TODO: ちなみに--zopfliを加えることで、zopfliのアルゴリズムを用いてより効果的な圧縮もできます(ただし処理はかなり遅いのでリアルタイム処理には向いていない)。
 
 pub fn png_compressor(input_file: &mut File) -> Result<Vec<u8>> {
     let mut reader = BufReader::new(input_file);
