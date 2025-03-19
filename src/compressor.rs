@@ -1,4 +1,7 @@
 use anyhow::{anyhow, Result};
+use image::codecs::jpeg::JpegEncoder;
+use image::ExtendedColorType;
+use image::{DynamicImage, GenericImageView};
 use oxipng::{Options, PngError};
 use std::fs::File;
 use std::io::{BufReader, Read};
@@ -18,48 +21,43 @@ pub fn png_compressor(input_file: &mut File) -> Result<Vec<u8>> {
     let png_result = oxipng::optimize_from_memory(&bytes, &Options::default());
     match png_result {
         Ok(data) => Ok(data),
-        Err(e) => {
-            match e {
-                PngError::DeflatedDataTooLong(size) => {
-                    Err(anyhow!("Deflated data too long: {}", size))
-                }
-                PngError::TimedOut => {
-                    Err(anyhow!("PNG optimization timed out"))
-                }
-                PngError::NotPNG => {
-                    Err(anyhow!("Invalid PNG header: Not a PNG file or file is corrupted"))
-                }
-                PngError::APNGNotSupported => {
-                    Err(anyhow!("APNG format is not supported"))
-                }
-                PngError::APNGOutOfOrder => {
-                    Err(anyhow!("APNG chunks are out of order"))
-                }
-                PngError::InvalidData => {
-                    Err(anyhow!("Invalid PNG data"))
-                }
-                PngError::TruncatedData => {
-                    Err(anyhow!("Truncated PNG data"))
-                }
-                PngError::ChunkMissing(chunk_type) => {
-                    Err(anyhow!("Missing PNG chunk: {}", chunk_type))
-                }
-                PngError::InvalidDepthForType(bit_depth, color_type) => {
-                    Err(anyhow!("Invalid bit depth for color type: bit_depth={:?}, color_type={:?}", bit_depth, color_type))
-                }
-                PngError::IncorrectDataLength(expected, actual) => {
-                    Err(anyhow!("Incorrect data length: expected={}, actual={}", expected, actual))
-                }
-                PngError::C2PAMetadataPreventsChanges => {
-                    Err(anyhow!("C2PA metadata prevents changes"))
-                }
-                PngError::Other(message) => {
-                    Err(anyhow!("PNG optimization failed: {}", message))
-                }
-                _ => {
-                    Err(anyhow!("PNG optimization failed: {:?}", e))
-                }
-            }
-        }
+        Err(e) => match e {
+            PngError::DeflatedDataTooLong(size) => Err(anyhow!("Deflated data too long: {}", size)),
+            PngError::TimedOut => Err(anyhow!("PNG optimization timed out")),
+            PngError::NotPNG => Err(anyhow!(
+                "Invalid PNG header: Not a PNG file or file is corrupted"
+            )),
+            PngError::APNGNotSupported => Err(anyhow!("APNG format is not supported")),
+            PngError::APNGOutOfOrder => Err(anyhow!("APNG chunks are out of order")),
+            PngError::InvalidData => Err(anyhow!("Invalid PNG data")),
+            PngError::TruncatedData => Err(anyhow!("Truncated PNG data")),
+            PngError::ChunkMissing(chunk_type) => Err(anyhow!("Missing PNG chunk: {}", chunk_type)),
+            PngError::InvalidDepthForType(bit_depth, color_type) => Err(anyhow!(
+                "Invalid bit depth for color type: bit_depth={:?}, color_type={:?}",
+                bit_depth,
+                color_type
+            )),
+            PngError::IncorrectDataLength(expected, actual) => Err(anyhow!(
+                "Incorrect data length: expected={}, actual={}",
+                expected,
+                actual
+            )),
+            PngError::C2PAMetadataPreventsChanges => Err(anyhow!("C2PA metadata prevents changes")),
+            PngError::Other(message) => Err(anyhow!("PNG optimization failed: {}", message)),
+            _ => Err(anyhow!("PNG optimization failed: {:?}", e)),
+        },
     }
+}
+
+pub fn jpeg_compressor(
+    dynamic_image: &DynamicImage,
+) -> Result<Vec<u8>> {
+    let (width, height) = dynamic_image.dimensions();
+    let rgb_image = dynamic_image.to_rgb8();
+
+    let mut target: Vec<u8> = Vec::new();
+    let mut encoder = JpegEncoder::new_with_quality(&mut target, 70);
+    encoder.encode(&rgb_image.into_raw(), width, height, ExtendedColorType::Rgb8)?;
+
+    Ok(target)
 }

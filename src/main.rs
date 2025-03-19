@@ -1,6 +1,6 @@
 mod compressor;
 
-use crate::compressor::png_compressor;
+use crate::compressor::{jpeg_compressor, png_compressor};
 use anyhow::{anyhow, Context, Result};
 use clap::Parser;
 use image::{ImageFormat, ImageReader};
@@ -39,6 +39,7 @@ fn main() -> Result<()> {
 
     let compressed_data = match image_format {
         ImageFormat::Png => {
+            // TODO: File を渡さずに DynamicImage を渡せるか? そのためには、ファイルヘッダーを含む状態でバイトを取得できるようにする。
             let mut input_file = File::open(input_path)
                 .with_context(|| format!("Failed to open input file: {}", input_path))?;
             let result = png_compressor(&mut input_file);
@@ -49,6 +50,16 @@ fn main() -> Result<()> {
                 }
             }
         },
+        ImageFormat::Jpeg => {
+            let dynamic_image = image_reader.decode()?;
+            let result = jpeg_compressor(&dynamic_image);
+            match result {
+                Ok(data) => data,
+                Err(e) => {
+                    return Err(anyhow!("PNG compression failed for file: {}. Error: {}", input_path, e));
+                }
+            }
+        }
         _ => {
             return Err(anyhow!("Not supported image format"));
         }
