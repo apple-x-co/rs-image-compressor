@@ -1,7 +1,7 @@
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use image::codecs::jpeg::JpegEncoder;
-use image::ExtendedColorType;
-use image::{DynamicImage, GenericImageView};
+use image::{ExtendedColorType, ImageReader};
+use image::GenericImageView;
 use oxipng::{Options, PngError};
 use std::fs::File;
 use std::io::{BufReader, Read};
@@ -50,8 +50,14 @@ pub fn png_compressor(input_file: &mut File) -> Result<Vec<u8>> {
 }
 
 pub fn jpeg_compressor(
-    dynamic_image: &DynamicImage,
+    input_file: &mut File
 ) -> Result<Vec<u8>> {
+    let reader = BufReader::new(input_file);
+    let image_reader = ImageReader::new(reader)
+        .with_guessed_format()
+        .context("Failed to guess image format")?;
+    let dynamic_image = image_reader.decode()?;
+
     let (width, height) = dynamic_image.dimensions();
     let rgb_image = dynamic_image.to_rgb8();
 

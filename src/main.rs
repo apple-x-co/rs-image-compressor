@@ -39,7 +39,6 @@ fn main() -> Result<()> {
 
     let compressed_data = match image_format {
         ImageFormat::Png => {
-            // TODO: File を渡さずに DynamicImage を渡せるか? そのためには、ファイルヘッダーを含む状態でバイトを取得できるようにする。
             let mut input_file = File::open(input_path)
                 .with_context(|| format!("Failed to open input file: {}", input_path))?;
             let result = png_compressor(&mut input_file);
@@ -51,8 +50,9 @@ fn main() -> Result<()> {
             }
         },
         ImageFormat::Jpeg => {
-            let dynamic_image = image_reader.decode()?;
-            let result = jpeg_compressor(&dynamic_image);
+            let mut input_file = File::open(input_path)
+                .with_context(|| format!("Failed to open input file: {}", input_path))?;
+            let result = jpeg_compressor(&mut input_file);
             match result {
                 Ok(data) => data,
                 Err(e) => {
