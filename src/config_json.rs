@@ -22,7 +22,7 @@ pub struct Config {
 
 impl Default for PngConfig {
     fn default() -> Self {
-        Self { quality: 70 }
+        Self { quality: 3 }
     }
 }
 

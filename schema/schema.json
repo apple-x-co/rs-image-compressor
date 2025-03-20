@@ -5,13 +5,23 @@
     "png": {
       "type": "object",
       "properties": {
-      }
+        "quality": {
+          "type": "integer",
+          "description": "1: High, 6: Low",
+          "minimum": 1,
+          "maximum": 6
+        }
+      },
+      "required": [
+        "quality"
+      ]
     },
     "jpeg": {
       "type": "object",
       "properties": {
         "quality": {
           "type": "integer",
+          "description": "100: High, 0: Low",
           "minimum": 0,
           "maximum": 100
         }
