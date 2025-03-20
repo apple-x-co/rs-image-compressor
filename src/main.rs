@@ -2,13 +2,12 @@ mod compressor;
 mod config_json;
 
 use crate::compressor::{jpeg_compressor, png_compressor};
+use crate::config_json::Config;
 use anyhow::{anyhow, Context, Result};
 use clap::Parser;
 use image::{ImageFormat, ImageReader};
 use std::fs::File;
 use std::io::{BufReader, Write};
-use std::process::exit;
-use crate::config_json::Config;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -31,7 +30,6 @@ fn main() -> Result<()> {
             Err(e) => return Err(anyhow!("{}", e)),
         }
     };
-    println!("{:#?}", config);
 
     let input_path = &args.input;
     let input_file = File::open(input_path)
