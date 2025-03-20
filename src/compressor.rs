@@ -1,7 +1,7 @@
 use crate::config_json::{JpegConfig, PngConfig};
-use anyhow::{Context, Result, anyhow};
-use image::GenericImageView;
+use anyhow::{anyhow, Context, Result};
 use image::codecs::jpeg::JpegEncoder;
+use image::GenericImageView;
 use image::{ExtendedColorType, ImageReader};
 use oxipng::{Interlacing, Options, PngError, StripChunks};
 use std::fs::File;

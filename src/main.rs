@@ -7,7 +7,7 @@ use anyhow::{anyhow, Context, Result};
 use clap::Parser;
 use image::{ImageFormat, ImageReader};
 use std::fs::File;
-use std::io::{BufReader, Write};
+use std::io::{BufReader, Read, Write};
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -78,8 +78,6 @@ fn main() -> Result<()> {
     output_file
         .write_all(&compressed_data)
         .with_context(|| format!("Failed to write to output file: {}", args.output))?;
-
-    println!("Compressed successfully and wrote to {}!", args.output);
 
     Ok(())
 }
