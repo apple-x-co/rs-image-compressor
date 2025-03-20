@@ -3,14 +3,12 @@ use anyhow::{Context, Result, anyhow};
 use image::GenericImageView;
 use image::codecs::jpeg::JpegEncoder;
 use image::{ExtendedColorType, ImageReader};
-use oxipng::{Options, PngError};
+use oxipng::{Options, PngError, StripChunks};
 use std::fs::File;
 use std::io::{BufReader, Read};
 
 // NOTE: Use "Oxipng"
 // TODO: -i 0 or 1はインターレースの有無を表し、0で削除、1で有効化し、アルゴリズムはAdam7PNGを使用します。
-// TODO: --strip safe or allは画像のメタデータを削除する設定です。safeは画像の描画に影響しないメタデータを削除します(-sでも同じ設定)。
-// TODO: allは全てのメタデータを削除します。
 // TODO: ちなみに--zopfliを加えることで、zopfliのアルゴリズムを用いてより効果的な圧縮もできます(ただし処理はかなり遅いのでリアルタイム処理には向いていない)。
 
 pub fn png_compressor(config: &Option<PngConfig>, input_file: &mut File) -> Result<Vec<u8>> {
@@ -23,8 +21,17 @@ pub fn png_compressor(config: &Option<PngConfig>, input_file: &mut File) -> Resu
         Some(config) => config.quality,
         None => default_config.quality,
     };
+    let strip = match config {
+        Some(config) => config.strip.as_str(),
+        None => default_config.strip.as_str(),
+    };
 
-    let options = Options::from_preset(quality);
+    let mut options = Options::from_preset(quality);
+    options.strip = match strip {
+        "safe" => StripChunks::Safe,
+        "all" => StripChunks::All,
+        _ => StripChunks::None,
+    };
 
     let png_result = oxipng::optimize_from_memory(&bytes, &options);
     match png_result {

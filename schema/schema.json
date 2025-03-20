@@ -10,10 +10,19 @@
           "description": "1: High, 6: Low",
           "minimum": 1,
           "maximum": 6
+        },
+        "strip": {
+          "type": "string",
+          "enum": [
+            "none",
+            "safe",
+            "all"
+          ]
         }
       },
       "required": [
-        "quality"
+        "quality",
+        "strip"
       ]
     },
     "jpeg": {
