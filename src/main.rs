@@ -7,7 +7,7 @@ use anyhow::{anyhow, Context, Result};
 use clap::Parser;
 use image::{ImageFormat, ImageReader};
 use std::fs::File;
-use std::io::{BufReader, Read, Write};
+use std::io::{BufReader, Write};
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
