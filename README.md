@@ -18,7 +18,8 @@ rs-image-compressor --input <INPUT> --output <OUTPUT> --config <CONFIG>
   "png": {
     "quality": 3,
     "strip": "all",
-    "interlacing": "none"
+    "interlacing": "none",
+    "optimize_alpha": true
   },
   "jpeg": {
     "quality": 70
