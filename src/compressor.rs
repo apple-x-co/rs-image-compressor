@@ -25,6 +25,10 @@ pub fn png_compressor(config: &Option<PngConfig>, input_file: &mut File) -> Resu
         Some(config) => config.interlacing.as_str(),
         None => default_config.interlacing.as_str(),
     };
+    let optimize_alpha = match config {
+        Some(config) => config.optimize_alpha,
+        None => default_config.optimize_alpha,
+    };
 
     let mut options = Options::from_preset(quality);
     options.strip = match strip {
@@ -36,6 +40,7 @@ pub fn png_compressor(config: &Option<PngConfig>, input_file: &mut File) -> Resu
         "adam7" => Some(Interlacing::Adam7),
         _ => Some(Interlacing::None),
     };
+    options.optimize_alpha = optimize_alpha;
 
     let png_result = oxipng::optimize_from_memory(&bytes, &options);
     match png_result {

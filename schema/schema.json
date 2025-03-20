@@ -9,7 +9,8 @@
           "type": "integer",
           "description": "1: High, 6: Low",
           "minimum": 1,
-          "maximum": 6
+          "maximum": 6,
+          "default": 3
         },
         "strip": {
           "type": "string",
@@ -17,20 +18,27 @@
             "none",
             "safe",
             "all"
-          ]
+          ],
+          "default": "all"
         },
         "interlacing": {
           "type": "string",
           "enum": [
             "none",
             "adam7"
-          ]
+          ],
+          "default": "none"
+        },
+        "optimize_alpha": {
+          "type": "boolean",
+          "default": false
         }
       },
       "required": [
         "quality",
         "strip",
-        "interlacing"
+        "interlacing",
+        "optimize_alpha"
       ]
     },
     "jpeg": {
@@ -40,7 +48,8 @@
           "type": "integer",
           "description": "100: High, 0: Low",
           "minimum": 0,
-          "maximum": 100
+          "maximum": 100,
+          "default": 70
         }
       },
       "required": [

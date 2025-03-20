@@ -9,6 +9,7 @@ pub struct PngConfig {
     pub quality: u8,
     pub strip: String,
     pub interlacing: String,
+    pub optimize_alpha: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -28,6 +29,7 @@ impl Default for PngConfig {
             quality: 3,
             strip: "all".into(),
             interlacing: "none".into(),
+            optimize_alpha: false,
         }
     }
 }
