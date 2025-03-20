@@ -17,7 +17,8 @@ rs-image-compressor --input <INPUT> --output <OUTPUT> --config <CONFIG>
   "$schema": "https://raw.githubusercontent.com/apple-x-co/rs-image-compressor/refs/heads/main/schema/schema.json",
   "png": {
     "quality": 3,
-    "strip": "all"
+    "strip": "all",
+    "interlacing": "none"
   },
   "jpeg": {
     "quality": 70

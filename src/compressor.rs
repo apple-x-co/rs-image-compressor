@@ -3,13 +3,9 @@ use anyhow::{Context, Result, anyhow};
 use image::GenericImageView;
 use image::codecs::jpeg::JpegEncoder;
 use image::{ExtendedColorType, ImageReader};
-use oxipng::{Options, PngError, StripChunks};
+use oxipng::{Interlacing, Options, PngError, StripChunks};
 use std::fs::File;
 use std::io::{BufReader, Read};
-
-// NOTE: Use "Oxipng"
-// TODO: -i 0 or 1はインターレースの有無を表し、0で削除、1で有効化し、アルゴリズムはAdam7PNGを使用します。
-// TODO: ちなみに--zopfliを加えることで、zopfliのアルゴリズムを用いてより効果的な圧縮もできます(ただし処理はかなり遅いのでリアルタイム処理には向いていない)。
 
 pub fn png_compressor(config: &Option<PngConfig>, input_file: &mut File) -> Result<Vec<u8>> {
     let mut reader = BufReader::new(input_file);
@@ -25,12 +21,20 @@ pub fn png_compressor(config: &Option<PngConfig>, input_file: &mut File) -> Resu
         Some(config) => config.strip.as_str(),
         None => default_config.strip.as_str(),
     };
+    let interlacing = match config {
+        Some(config) => config.interlacing.as_str(),
+        None => default_config.interlacing.as_str(),
+    };
 
     let mut options = Options::from_preset(quality);
     options.strip = match strip {
         "safe" => StripChunks::Safe,
         "all" => StripChunks::All,
         _ => StripChunks::None,
+    };
+    options.interlace = match interlacing {
+        "adam7" => Some(Interlacing::Adam7),
+        _ => Some(Interlacing::None),
     };
 
     let png_result = oxipng::optimize_from_memory(&bytes, &options);

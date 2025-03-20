@@ -8,6 +8,7 @@ const JSON_SCHEMA_BYTES: &'static [u8] = include_bytes!("../schema/schema.json")
 pub struct PngConfig {
     pub quality: u8,
     pub strip: String,
+    pub interlacing: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -25,7 +26,8 @@ impl Default for PngConfig {
     fn default() -> Self {
         Self {
             quality: 3,
-            strip: "all".into()
+            strip: "all".into(),
+            interlacing: "none".into(),
         }
     }
 }

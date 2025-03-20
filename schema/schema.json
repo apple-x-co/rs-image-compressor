@@ -18,11 +18,19 @@
             "safe",
             "all"
           ]
+        },
+        "interlacing": {
+          "type": "string",
+          "enum": [
+            "none",
+            "adam7"
+          ]
         }
       },
       "required": [
         "quality",
-        "strip"
+        "strip",
+        "interlacing"
       ]
     },
     "jpeg": {
