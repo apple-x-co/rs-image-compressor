@@ -1,6 +1,6 @@
 [package]
 name = "rs-image-compressor"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 
 [dependencies]
@@ -11,6 +11,7 @@ anyhow = "1.0.97"
 jsonschema = "0.29.0"
 serde_json = "1.0.140"
 serde = { version = "1.0.219", features = ["derive"] }
+mozjpeg = "0.10.13"
 
 [profile.release]
 opt-level = "s"       # サイズと速度のバランスを取る最適化

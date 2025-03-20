@@ -1,8 +1,8 @@
 use crate::config_json::{JpegConfig, PngConfig};
 use anyhow::{anyhow, Context, Result};
-use image::codecs::jpeg::JpegEncoder;
 use image::GenericImageView;
-use image::{ExtendedColorType, ImageReader};
+use image::ImageReader;
+use mozjpeg::{ColorSpace, Compress};
 use oxipng::{Interlacing, Options, PngError, StripChunks};
 use std::fs::File;
 use std::io::{BufReader, Read};
@@ -79,9 +79,9 @@ pub fn jpeg_compressor(config: &Option<JpegConfig>, input_file: &mut File) -> Re
         .with_guessed_format()
         .context("Failed to guess image format")?;
     let dynamic_image = image_reader.decode()?;
-
     let (width, height) = dynamic_image.dimensions();
     let rgb_image = dynamic_image.to_rgb8();
+    let bytes = rgb_image.into_raw();
 
     let default_config = JpegConfig::default();
     let quality = match config {
@@ -89,14 +89,52 @@ pub fn jpeg_compressor(config: &Option<JpegConfig>, input_file: &mut File) -> Re
         None => default_config.quality,
     };
 
-    let mut target: Vec<u8> = Vec::new();
-    let mut encoder = JpegEncoder::new_with_quality(&mut target, quality);
-    encoder.encode(
-        &rgb_image.into_raw(),
-        width,
-        height,
-        ExtendedColorType::Rgb8,
-    )?;
+    let color_space = ColorSpace::JCS_RGB;
+    let mut compress = Compress::new(color_space);
+    compress.set_size(width as usize, height as usize);
+    compress.set_quality(quality as f32);
 
-    Ok(target)
+    let mut started = compress
+        .start_compress(Vec::new())
+        .map_err(|e| anyhow!("Failed to start compress: {}", e))?;
+
+    let scanline_result = started.write_scanlines(&bytes);
+    if scanline_result.is_err() {
+        let err = format!("Failed to write scanline: {}", scanline_result.unwrap_err());
+        return Err(anyhow!(err));
+    }
+    let writer = started
+        .finish()
+        .map_err(|e| anyhow!("Failed to finish compress: {}", e))?;
+
+    Ok(writer)
 }
+
+// NOTE: "JpegEncoder" は圧縮画像が元画像より大きくなる場合がある
+// pub fn jpeg_compressor(config: &Option<JpegConfig>, input_file: &mut File) -> Result<Vec<u8>> {
+//     let reader = BufReader::new(input_file);
+//     let image_reader = ImageReader::new(reader)
+//         .with_guessed_format()
+//         .context("Failed to guess image format")?;
+//     let dynamic_image = image_reader.decode()?;
+//
+//     let (width, height) = dynamic_image.dimensions();
+//     let rgb_image = dynamic_image.to_rgb8();
+//
+//     let default_config = JpegConfig::default();
+//     let quality = match config {
+//         Some(config) => config.quality,
+//         None => default_config.quality,
+//     };
+//
+//     let mut target: Vec<u8> = Vec::new();
+//     let mut encoder = JpegEncoder::new_with_quality(&mut target, quality);
+//     encoder.encode(
+//         &rgb_image.into_raw(),
+//         width,
+//         height,
+//         ExtendedColorType::Rgb8,
+//     )?;
+//
+//     Ok(target)
+// }
