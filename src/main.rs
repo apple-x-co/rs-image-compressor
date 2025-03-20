@@ -1,4 +1,5 @@
 mod compressor;
+mod config_json;
 
 use crate::compressor::{jpeg_compressor, png_compressor};
 use anyhow::{anyhow, Context, Result};
@@ -6,6 +7,8 @@ use clap::Parser;
 use image::{ImageFormat, ImageReader};
 use std::fs::File;
 use std::io::{BufReader, Write};
+use std::process::exit;
+use crate::config_json::Config;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -16,12 +19,19 @@ struct Args {
     #[arg(short, long)]
     output: String,
 
-    #[arg(short, long, default_value = "")]
-    config: String, // TODO: JSON Config
+    #[arg(short, long)]
+    config: Option<String>,
 }
 
 fn main() -> Result<()> {
     let args = Args::parse();
+    let config = if args.config.is_none() { Config::default() } else {
+        match config_json::parse(args.config.unwrap().as_str()) {
+            Ok(config) => config,
+            Err(e) => return Err(anyhow!("{}", e)),
+        }
+    };
+    println!("{:#?}", config);
 
     let input_path = &args.input;
     let input_file = File::open(input_path)
@@ -41,7 +51,7 @@ fn main() -> Result<()> {
         ImageFormat::Png => {
             let mut input_file = File::open(input_path)
                 .with_context(|| format!("Failed to open input file: {}", input_path))?;
-            let result = png_compressor(&mut input_file);
+            let result = png_compressor(&config.png, &mut input_file);
             match result {
                 Ok(data) => data,
                 Err(e) => {
@@ -52,7 +62,7 @@ fn main() -> Result<()> {
         ImageFormat::Jpeg => {
             let mut input_file = File::open(input_path)
                 .with_context(|| format!("Failed to open input file: {}", input_path))?;
-            let result = jpeg_compressor(&mut input_file);
+            let result = jpeg_compressor(&config.jpeg, &mut input_file);
             match result {
                 Ok(data) => data,
                 Err(e) => {

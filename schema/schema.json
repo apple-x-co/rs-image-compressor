@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "png": {
+      "type": "object",
+      "properties": {
+      }
+    },
+    "jpeg": {
+      "type": "object",
+      "properties": {
+        "quality": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        }
+      },
+      "required": [
+        "quality"
+      ]
+    }
+  }
+}

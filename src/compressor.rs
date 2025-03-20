@@ -5,6 +5,7 @@ use image::GenericImageView;
 use oxipng::{Options, PngError};
 use std::fs::File;
 use std::io::{BufReader, Read};
+use crate::config_json::{JpegConfig, PngConfig};
 
 // NOTE: Use "Oxipng"
 // TODO: -o 値は最適化レベルを表し、1～6,maxの順に圧縮レベルが高くなります(デフォルトは2)。
@@ -13,7 +14,7 @@ use std::io::{BufReader, Read};
 // TODO: allは全てのメタデータを削除します。
 // TODO: ちなみに--zopfliを加えることで、zopfliのアルゴリズムを用いてより効果的な圧縮もできます(ただし処理はかなり遅いのでリアルタイム処理には向いていない)。
 
-pub fn png_compressor(input_file: &mut File) -> Result<Vec<u8>> {
+pub fn png_compressor(config: &Option<PngConfig>, input_file: &mut File) -> Result<Vec<u8>> {
     let mut reader = BufReader::new(input_file);
     let mut bytes = Vec::new();
     reader.read_to_end(&mut bytes)?;
@@ -50,6 +51,7 @@ pub fn png_compressor(input_file: &mut File) -> Result<Vec<u8>> {
 }
 
 pub fn jpeg_compressor(
+    config: &Option<JpegConfig>,
     input_file: &mut File
 ) -> Result<Vec<u8>> {
     let reader = BufReader::new(input_file);
@@ -61,8 +63,14 @@ pub fn jpeg_compressor(
     let (width, height) = dynamic_image.dimensions();
     let rgb_image = dynamic_image.to_rgb8();
 
+    let default_config = JpegConfig::default();
+    let quality = match config {
+        Some(config) => config.quality,
+        None => default_config.quality,
+    };
+
     let mut target: Vec<u8> = Vec::new();
-    let mut encoder = JpegEncoder::new_with_quality(&mut target, 70);
+    let mut encoder = JpegEncoder::new_with_quality(&mut target, quality);
     encoder.encode(&rgb_image.into_raw(), width, height, ExtendedColorType::Rgb8)?;
 
     Ok(target)
