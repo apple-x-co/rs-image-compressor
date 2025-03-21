@@ -15,6 +15,11 @@ pub struct PngConfig {
 #[derive(Debug, Deserialize)]
 pub struct JpegConfig {
     pub quality: u8,
+    pub scan_optimization_mode: String,
+    pub progressive_mode: bool,
+    pub optimize_coding: bool,
+    pub use_scans_in_trellis: bool,
+    pub smoothing_factor: u8,
 }
 
 #[derive(Debug, Deserialize)]
@@ -36,7 +41,14 @@ impl Default for PngConfig {
 
 impl Default for JpegConfig {
     fn default() -> Self {
-        Self { quality: 70 }
+        Self {
+            quality: 70,
+            scan_optimization_mode: "all_components_together".to_string(),
+            progressive_mode: false,
+            optimize_coding: true,
+            use_scans_in_trellis: false,
+            smoothing_factor: 0,
+        }
     }
 }
 

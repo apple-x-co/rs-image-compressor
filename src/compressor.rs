@@ -1,13 +1,13 @@
 use crate::config_json::{JpegConfig, PngConfig};
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
 use image::GenericImageView;
 use image::ImageReader;
-use mozjpeg::{ColorSpace, Compress};
+use mozjpeg::{ColorSpace, Compress, ScanMode};
 use oxipng::{Interlacing, Options, PngError, StripChunks};
 use std::fs::File;
 use std::io::{BufReader, Read};
 
-pub fn png_compressor(config: &Option<PngConfig>, input_file: &mut File) -> Result<Vec<u8>> {
+pub fn png_compressor(config: Option<&PngConfig>, input_file: &mut File) -> Result<Vec<u8>> {
     let mut reader = BufReader::new(input_file);
     let mut bytes = Vec::new();
     reader.read_to_end(&mut bytes)?;
@@ -73,7 +73,7 @@ pub fn png_compressor(config: &Option<PngConfig>, input_file: &mut File) -> Resu
     }
 }
 
-pub fn jpeg_compressor(config: &Option<JpegConfig>, input_file: &mut File) -> Result<Vec<u8>> {
+pub fn jpeg_compressor(config: Option<&JpegConfig>, input_file: &mut File) -> Result<Vec<u8>> {
     let reader = BufReader::new(input_file);
     let image_reader = ImageReader::new(reader)
         .with_guessed_format()
@@ -84,15 +84,49 @@ pub fn jpeg_compressor(config: &Option<JpegConfig>, input_file: &mut File) -> Re
     let bytes = rgb_image.into_raw();
 
     let default_config = JpegConfig::default();
-    let quality = match config {
-        Some(config) => config.quality,
-        None => default_config.quality,
+    let (
+        quality,
+        scan_optimization_mode,
+        progressive_mode,
+        optimize_coding,
+        use_scans_in_trellis,
+        smoothing_factor,
+    ) = match config {
+        Some(config) => (
+            config.quality,
+            config.scan_optimization_mode.as_str(),
+            config.progressive_mode,
+            config.optimize_coding,
+            config.use_scans_in_trellis,
+            config.smoothing_factor,
+        ),
+        None => (
+            default_config.quality,
+            default_config.scan_optimization_mode.as_str(),
+            default_config.progressive_mode,
+            default_config.optimize_coding,
+            default_config.use_scans_in_trellis,
+            default_config.smoothing_factor,
+        ),
     };
 
     let color_space = ColorSpace::JCS_RGB;
     let mut compress = Compress::new(color_space);
     compress.set_size(width as usize, height as usize);
     compress.set_quality(quality as f32);
+    if scan_optimization_mode != "none" {
+        compress.set_scan_optimization_mode(match scan_optimization_mode {
+            "all_components_together" => ScanMode::AllComponentsTogether,
+            "scan_per_component" => ScanMode::ScanPerComponent,
+            _ => ScanMode::Auto,
+        });
+    }
+    if progressive_mode {
+        compress.set_progressive_mode();
+    }
+    compress.set_optimize_coding(optimize_coding);
+    compress.set_use_scans_in_trellis(use_scans_in_trellis);
+    compress.set_smoothing_factor(smoothing_factor);
 
     let mut started = compress
         .start_compress(Vec::new())

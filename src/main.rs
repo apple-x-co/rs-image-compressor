@@ -49,7 +49,7 @@ fn main() -> Result<()> {
         ImageFormat::Png => {
             let mut input_file = File::open(input_path)
                 .with_context(|| format!("Failed to open input file: {}", input_path))?;
-            let result = png_compressor(&config.png, &mut input_file);
+            let result = png_compressor(config.png.as_ref(), &mut input_file);
             match result {
                 Ok(data) => data,
                 Err(e) => {
@@ -60,7 +60,7 @@ fn main() -> Result<()> {
         ImageFormat::Jpeg => {
             let mut input_file = File::open(input_path)
                 .with_context(|| format!("Failed to open input file: {}", input_path))?;
-            let result = jpeg_compressor(&config.jpeg, &mut input_file);
+            let result = jpeg_compressor(config.jpeg.as_ref(), &mut input_file);
             match result {
                 Ok(data) => data,
                 Err(e) => {

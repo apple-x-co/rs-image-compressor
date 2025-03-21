@@ -10,7 +10,7 @@ rs-image-compressor --input <INPUT> --output <OUTPUT>
 rs-image-compressor --input <INPUT> --output <OUTPUT> --config <CONFIG>
 ```
 
-## CONFIG
+## Config (JSON format)
 
 ```json
 {
@@ -22,7 +22,12 @@ rs-image-compressor --input <INPUT> --output <OUTPUT> --config <CONFIG>
     "optimize_alpha": true
   },
   "jpeg": {
-    "quality": 70
+    "quality": 70,
+    "scan_optimization_mode": "none",
+    "progressive_mode": false,
+    "optimize_coding": true,
+    "use_scans_in_trellis": false,
+    "smoothing_factor": 0
   }
 }
 ```
@@ -30,4 +35,6 @@ rs-image-compressor --input <INPUT> --output <OUTPUT> --config <CONFIG>
 ## Supported Images
 
 * PNG
+  * [oxipng](https://crates.io/crates/oxipng)
 * JPEG
+  * [mozjpeg](https://crates.io/crates/mozjpeg)
