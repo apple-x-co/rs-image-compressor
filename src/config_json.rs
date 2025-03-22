@@ -20,6 +20,7 @@ pub struct JpegConfig {
     pub optimize_coding: bool,
     pub use_scans_in_trellis: bool,
     pub smoothing_factor: u8,
+    pub exif: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -48,6 +49,7 @@ impl Default for JpegConfig {
             optimize_coding: true,
             use_scans_in_trellis: false,
             smoothing_factor: 0,
+            exif: "all".to_string(),
         }
     }
 }

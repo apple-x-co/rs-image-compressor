@@ -8,6 +8,9 @@ use clap::Parser;
 use image::{ImageFormat, ImageReader};
 use std::fs::File;
 use std::io::{BufReader, Write};
+use std::path::Path;
+use little_exif::exif_tag::ExifTag;
+use little_exif::metadata::Metadata;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -31,6 +34,8 @@ fn main() -> Result<()> {
         }
     };
 
+    let output_path = &args.output;
+
     let input_path = &args.input;
     let input_file = File::open(input_path)
         .with_context(|| format!("Failed to open input file: {}", input_path))?;
@@ -45,6 +50,7 @@ fn main() -> Result<()> {
         None => { return Err(anyhow::anyhow!("Could not determine image format")) }
     };
 
+    // NOTE: Compress image
     let compressed_data = match image_format {
         ImageFormat::Png => {
             let mut input_file = File::open(input_path)
@@ -78,6 +84,29 @@ fn main() -> Result<()> {
     output_file
         .write_all(&compressed_data)
         .with_context(|| format!("Failed to write to output file: {}", args.output))?;
+
+    // NOTE: Write exif
+    match image_format {
+        ImageFormat::Jpeg => {
+            match config.jpeg.unwrap().exif.as_str() {
+                "all" => {
+                    let metadata = Metadata::new_from_path(Path::new(input_path))?;
+                    metadata.write_to_file(Path::new(output_path))?;
+                }
+                "orientation" => {
+                    let metadata = Metadata::new_from_path(Path::new(input_path))?;
+                    let mut tag_iterator = metadata.get_tag(&ExifTag::Orientation(vec![]));
+                    if let Some(exif_tag) = tag_iterator.next() {
+                        let mut new_metadata = Metadata::new();
+                        new_metadata.set_tag(exif_tag.clone());
+                        new_metadata.write_to_file(Path::new(output_path))?;
+                    }
+                }
+                _ => {}
+            }
+        },
+        _ => {}
+    }
 
     Ok(())
 }

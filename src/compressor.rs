@@ -1,5 +1,5 @@
 use crate::config_json::{JpegConfig, PngConfig};
-use anyhow::{Context, Result, anyhow};
+use anyhow::{anyhow, Context, Result};
 use image::GenericImageView;
 use image::ImageReader;
 use mozjpeg::{ColorSpace, Compress, ScanMode};

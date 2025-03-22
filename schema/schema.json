@@ -78,6 +78,15 @@
           "minimum": 0,
           "maximum": 100,
           "default": 0
+        },
+        "exif": {
+          "type": "string",
+          "enum": [
+            "all",
+            "orientation",
+            "none"
+          ],
+          "default": "all"
         }
       },
       "required": [
@@ -86,7 +95,8 @@
         "progressive_mode",
         "optimize_coding",
         "use_scans_in_trellis",
-        "smoothing_factor"
+        "smoothing_factor",
+        "exif"
       ]
     }
   }
