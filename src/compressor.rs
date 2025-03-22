@@ -1,13 +1,97 @@
-use crate::config_json::{JpegConfig, PngConfig};
+use crate::config_json::{Config, JpegConfig, PngConfig};
 use anyhow::{anyhow, Context, Result};
-use image::GenericImageView;
 use image::ImageReader;
+use image::{GenericImageView, ImageFormat};
+use little_exif::exif_tag::ExifTag;
+use little_exif::metadata::Metadata;
 use mozjpeg::{ColorSpace, Compress, ScanMode};
 use oxipng::{Interlacing, Options, PngError, StripChunks};
 use std::fs::File;
-use std::io::{BufReader, Read};
+use std::io::{BufReader, Read, Write};
+use std::path::Path;
 
-pub fn png_compressor(config: Option<&PngConfig>, input_file: &mut File) -> Result<Vec<u8>> {
+pub fn compress(config: Config, input_path: &String, output_path: &String) -> Result<()> {
+    let input_file = File::open(input_path)
+        .with_context(|| format!("Failed to open input file: {}", input_path))?;
+
+    let reader = BufReader::new(input_file);
+    let image_reader = ImageReader::new(reader)
+        .with_guessed_format()
+        .context("Failed to guess image format")?;
+
+    let image_format = match image_reader.format() {
+        Some(format) => format,
+        None => return Err(anyhow::anyhow!("Could not determine image format")),
+    };
+
+    // NOTE: Compress image
+    let compressed_data = match image_format {
+        ImageFormat::Png => {
+            let mut input_file = File::open(input_path)
+                .with_context(|| format!("Failed to open input file: {}", input_path))?;
+            let result = png_compress(config.png.as_ref(), &mut input_file);
+            match result {
+                Ok(data) => data,
+                Err(e) => {
+                    return Err(anyhow!(
+                        "PNG compression failed for file: {}. Error: {}",
+                        input_path,
+                        e
+                    ));
+                }
+            }
+        }
+        ImageFormat::Jpeg => {
+            let mut input_file = File::open(input_path)
+                .with_context(|| format!("Failed to open input file: {}", input_path))?;
+            let result = jpeg_compress(config.jpeg.as_ref(), &mut input_file);
+            match result {
+                Ok(data) => data,
+                Err(e) => {
+                    return Err(anyhow!(
+                        "PNG compression failed for file: {}. Error: {}",
+                        input_path,
+                        e
+                    ));
+                }
+            }
+        }
+        _ => {
+            return Err(anyhow!("Not supported image format"));
+        }
+    };
+
+    let mut output_file = File::create(output_path)
+        .with_context(|| format!("Failed to create output file: {}", output_path))?;
+    output_file
+        .write_all(&compressed_data)
+        .with_context(|| format!("Failed to write to output file: {}", output_path))?;
+
+    // NOTE: Write exif
+    match image_format {
+        ImageFormat::Jpeg => match config.jpeg.unwrap().exif.as_str() {
+            "all" => {
+                let metadata = Metadata::new_from_path(Path::new(input_path))?;
+                metadata.write_to_file(Path::new(output_path))?;
+            }
+            "orientation" => {
+                let metadata = Metadata::new_from_path(Path::new(input_path))?;
+                let mut tag_iterator = metadata.get_tag(&ExifTag::Orientation(vec![]));
+                if let Some(exif_tag) = tag_iterator.next() {
+                    let mut new_metadata = Metadata::new();
+                    new_metadata.set_tag(exif_tag.clone());
+                    new_metadata.write_to_file(Path::new(output_path))?;
+                }
+            }
+            _ => {}
+        },
+        _ => {}
+    }
+
+    Ok(())
+}
+
+fn png_compress(config: Option<&PngConfig>, input_file: &mut File) -> Result<Vec<u8>> {
     let mut reader = BufReader::new(input_file);
     let mut bytes = Vec::new();
     reader.read_to_end(&mut bytes)?;
@@ -73,7 +157,7 @@ pub fn png_compressor(config: Option<&PngConfig>, input_file: &mut File) -> Resu
     }
 }
 
-pub fn jpeg_compressor(config: Option<&JpegConfig>, input_file: &mut File) -> Result<Vec<u8>> {
+fn jpeg_compress(config: Option<&JpegConfig>, input_file: &mut File) -> Result<Vec<u8>> {
     let reader = BufReader::new(input_file);
     let image_reader = ImageReader::new(reader)
         .with_guessed_format()
