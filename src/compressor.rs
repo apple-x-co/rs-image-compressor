@@ -9,7 +9,7 @@ use little_exif::metadata::Metadata;
 use mozjpeg::{ColorSpace, Compress, ScanMode};
 use oxipng::{Interlacing, Options, PngError, StripChunks};
 use std::fs::File;
-use std::io::{BufReader, Read, Write};
+use std::io::{BufReader, Cursor, Write};
 use std::path::Path;
 
 pub fn compress(config: Config, input_path: &String, output_path: &String) -> Result<()> {
@@ -97,27 +97,44 @@ pub fn compress(config: Config, input_path: &String, output_path: &String) -> Re
 }
 
 fn png_compress(config: Option<&PngConfig>, input_file: &mut File) -> Result<Vec<u8>> {
-    let mut reader = BufReader::new(input_file);
-    let mut bytes = Vec::new();
-    reader.read_to_end(&mut bytes)?;
-
     let default_config = PngConfig::default();
-    let quality = match config {
-        Some(config) => config.quality,
-        None => default_config.quality,
+    let (quality, strip, interlacing, optimize_alpha, size) = match config {
+        Some(config) => (
+            config.quality,
+            config.strip.as_str(),
+            config.interlacing.as_str(),
+            config.optimize_alpha,
+            config.size.as_ref(),
+        ),
+        None => (
+            default_config.quality,
+            default_config.strip.as_str(),
+            default_config.interlacing.as_str(),
+            default_config.optimize_alpha,
+            default_config.size.as_ref(),
+        ),
     };
-    let strip = match config {
-        Some(config) => config.strip.as_str(),
-        None => default_config.strip.as_str(),
-    };
-    let interlacing = match config {
-        Some(config) => config.interlacing.as_str(),
-        None => default_config.interlacing.as_str(),
-    };
-    let optimize_alpha = match config {
-        Some(config) => config.optimize_alpha,
-        None => default_config.optimize_alpha,
-    };
+
+    let reader = BufReader::new(input_file);
+    let image_reader = ImageReader::new(reader)
+        .with_guessed_format()
+        .context("Failed to guess image format")?;
+
+    let mut dynamic_image = image_reader.decode()?;
+
+    if let Some(size) = size {
+        dynamic_image = match size.filter.as_str() {
+            "nearest" => dynamic_image.resize(size.width, size.height, FilterType::Nearest),
+            "triangle" => dynamic_image.resize(size.width, size.height, FilterType::Triangle),
+            "catmull_rom" => dynamic_image.resize(size.width, size.height, FilterType::CatmullRom),
+            "gaussian" => dynamic_image.resize(size.width, size.height, FilterType::Gaussian),
+            "lanczos3" => dynamic_image.resize(size.width, size.height, FilterType::Lanczos3),
+            _ => dynamic_image,
+        }
+    }
+
+    let mut bytes = Vec::new();
+    dynamic_image.write_to(&mut Cursor::new(&mut bytes), ImageFormat::Png)?;
 
     let mut options = Options::from_preset(quality);
     options.strip = match strip {
@@ -167,6 +184,36 @@ fn jpeg_compress(
     input_file: &mut File,
     metadata: &Metadata,
 ) -> Result<Vec<u8>> {
+    let default_config = JpegConfig::default();
+    let (
+        quality,
+        scan_optimization_mode,
+        progressive_mode,
+        optimize_coding,
+        use_scans_in_trellis,
+        smoothing_factor,
+        size,
+    ) = match config {
+        Some(config) => (
+            config.quality,
+            config.scan_optimization_mode.as_str(),
+            config.progressive_mode,
+            config.optimize_coding,
+            config.use_scans_in_trellis,
+            config.smoothing_factor,
+            config.size.as_ref(),
+        ),
+        None => (
+            default_config.quality,
+            default_config.scan_optimization_mode.as_str(),
+            default_config.progressive_mode,
+            default_config.optimize_coding,
+            default_config.use_scans_in_trellis,
+            default_config.smoothing_factor,
+            default_config.size.as_ref(),
+        ),
+    };
+
     let reader = BufReader::new(input_file);
     let image_reader = ImageReader::new(reader)
         .with_guessed_format()
@@ -202,36 +249,6 @@ fn jpeg_compress(
             _ => {}
         }
     }
-
-    let default_config = JpegConfig::default();
-    let (
-        quality,
-        scan_optimization_mode,
-        progressive_mode,
-        optimize_coding,
-        use_scans_in_trellis,
-        smoothing_factor,
-        size,
-    ) = match config {
-        Some(config) => (
-            config.quality,
-            config.scan_optimization_mode.as_str(),
-            config.progressive_mode,
-            config.optimize_coding,
-            config.use_scans_in_trellis,
-            config.smoothing_factor,
-            config.size.as_ref(),
-        ),
-        None => (
-            default_config.quality,
-            default_config.scan_optimization_mode.as_str(),
-            default_config.progressive_mode,
-            default_config.optimize_coding,
-            default_config.use_scans_in_trellis,
-            default_config.smoothing_factor,
-            default_config.size.as_ref(),
-        ),
-    };
 
     if let Some(size) = size {
         dynamic_image = match size.filter.as_str() {
