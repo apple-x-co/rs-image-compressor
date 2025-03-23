@@ -23,7 +23,7 @@ rs-image-compressor --input <INPUT> --output <OUTPUT> --config <CONFIG>
   },
   "jpeg": {
     "quality": 70,
-    "scan_optimization_mode": "none",
+    "scan_optimization_mode": "all_components_together",
     "progressive_mode": false,
     "optimize_coding": true,
     "use_scans_in_trellis": false,
