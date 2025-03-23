@@ -49,7 +49,7 @@ impl Default for JpegConfig {
             optimize_coding: true,
             use_scans_in_trellis: false,
             smoothing_factor: 0,
-            exif: "all".to_string(),
+            exif: "none".to_string(),
         }
     }
 }
