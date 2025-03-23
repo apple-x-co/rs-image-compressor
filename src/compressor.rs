@@ -3,6 +3,7 @@ use anyhow::{anyhow, Context, Result};
 use image::ImageReader;
 use image::{GenericImageView, ImageFormat};
 use little_exif::exif_tag::ExifTag;
+use little_exif::filetype::FileExtension;
 use little_exif::metadata::Metadata;
 use mozjpeg::{ColorSpace, Compress, ScanMode};
 use oxipng::{Interlacing, Options, PngError, StripChunks};
@@ -42,11 +43,35 @@ pub fn compress(config: Config, input_path: &String, output_path: &String) -> Re
             }
         }
         ImageFormat::Jpeg => {
+            let metadata = Metadata::new_from_path(Path::new(input_path))?;
+
             let mut input_file = File::open(input_path)
                 .with_context(|| format!("Failed to open input file: {}", input_path))?;
-            let result = jpeg_compress(config.jpeg.as_ref(), &mut input_file);
+            let result = jpeg_compress(config.jpeg.as_ref(), &mut input_file, &metadata);
             match result {
-                Ok(data) => data,
+                Ok(mut data) => {
+                    if let Some(jpeg_config) = config.jpeg {
+                        match jpeg_config.exif.as_str() {
+                            "all" => {
+                                // NOTE: Write "all" exif
+                                metadata.write_to_vec(&mut data, FileExtension::JPEG)?;
+                            }
+                            "orientation" => {
+                                // NOTE: Write "orientation" exif
+                                let mut tag_iterator =
+                                    metadata.get_tag(&ExifTag::Orientation(vec![]));
+                                if let Some(exif_tag) = tag_iterator.next() {
+                                    let mut new_metadata = Metadata::new();
+                                    new_metadata.set_tag(exif_tag.clone());
+                                    new_metadata.write_to_vec(&mut data, FileExtension::JPEG)?;
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+
+                    data
+                }
                 Err(e) => {
                     return Err(anyhow!(
                         "PNG compression failed for file: {}. Error: {}",
@@ -66,27 +91,6 @@ pub fn compress(config: Config, input_path: &String, output_path: &String) -> Re
     output_file
         .write_all(&compressed_data)
         .with_context(|| format!("Failed to write to output file: {}", output_path))?;
-
-    // NOTE: Write exif
-    match image_format {
-        ImageFormat::Jpeg => match config.jpeg.unwrap().exif.as_str() {
-            "all" => {
-                let metadata = Metadata::new_from_path(Path::new(input_path))?;
-                metadata.write_to_file(Path::new(output_path))?;
-            }
-            "orientation" => {
-                let metadata = Metadata::new_from_path(Path::new(input_path))?;
-                let mut tag_iterator = metadata.get_tag(&ExifTag::Orientation(vec![]));
-                if let Some(exif_tag) = tag_iterator.next() {
-                    let mut new_metadata = Metadata::new();
-                    new_metadata.set_tag(exif_tag.clone());
-                    new_metadata.write_to_file(Path::new(output_path))?;
-                }
-            }
-            _ => {}
-        },
-        _ => {}
-    }
 
     Ok(())
 }
@@ -157,12 +161,47 @@ fn png_compress(config: Option<&PngConfig>, input_file: &mut File) -> Result<Vec
     }
 }
 
-fn jpeg_compress(config: Option<&JpegConfig>, input_file: &mut File) -> Result<Vec<u8>> {
+fn jpeg_compress(
+    config: Option<&JpegConfig>,
+    input_file: &mut File,
+    metadata: &Metadata,
+) -> Result<Vec<u8>> {
     let reader = BufReader::new(input_file);
     let image_reader = ImageReader::new(reader)
         .with_guessed_format()
         .context("Failed to guess image format")?;
-    let dynamic_image = image_reader.decode()?;
+
+    let mut dynamic_image = image_reader.decode()?;
+
+    if let Some(jpeg_config) = config {
+        match jpeg_config.exif.as_str() {
+            "none" => {
+                let mut tag_iterator = metadata.get_tag(&ExifTag::Orientation(vec![]));
+                if let Some(exif_tag) = tag_iterator.next() {
+                    match exif_tag {
+                        ExifTag::Orientation(values) => {
+                            if let Some(value) = values.first() {
+                                // NOTE: Rotation image by "orientation" exif
+                                dynamic_image = match value {
+                                    2 => dynamic_image.fliph(),
+                                    3 => dynamic_image.rotate180(),
+                                    4 => dynamic_image.flipv(),
+                                    5 => dynamic_image.rotate90().fliph(),
+                                    6 => dynamic_image.rotate90(),
+                                    7 => dynamic_image.rotate270().fliph(),
+                                    8 => dynamic_image.rotate270(),
+                                    _ => dynamic_image,
+                                }
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+
     let (width, height) = dynamic_image.dimensions();
     let rgb_image = dynamic_image.to_rgb8();
     let bytes = rgb_image.into_raw();

@@ -28,7 +28,7 @@ rs-image-compressor --input <INPUT> --output <OUTPUT> --config <CONFIG>
     "optimize_coding": true,
     "use_scans_in_trellis": false,
     "smoothing_factor": 0,
-    "exif": "all"
+    "exif": "none"
   }
 }
 ```

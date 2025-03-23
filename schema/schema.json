@@ -86,7 +86,7 @@
             "orientation",
             "none"
           ],
-          "default": "all"
+          "default": "none"
         }
       },
       "required": [
