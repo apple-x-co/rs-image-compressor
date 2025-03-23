@@ -9,7 +9,7 @@ use little_exif::metadata::Metadata;
 use mozjpeg::{ColorSpace, Compress, ScanMode};
 use oxipng::{Interlacing, Options, PngError, StripChunks};
 use std::fs::File;
-use std::io::{BufReader, Cursor, Write};
+use std::io::{BufReader, Cursor, Read, Seek, Write};
 use std::path::Path;
 
 pub fn compress(config: Config, input_path: &String, output_path: &String) -> Result<()> {
@@ -44,10 +44,16 @@ pub fn compress(config: Config, input_path: &String, output_path: &String) -> Re
             }
         }
         ImageFormat::Jpeg => {
-            let metadata = Metadata::new_from_path(Path::new(input_path))?;
-
             let mut input_file = File::open(input_path)
                 .with_context(|| format!("Failed to open input file: {}", input_path))?;
+
+            let mut buffer = [0; 50];
+            input_file.read_exact(&mut buffer)?;
+            input_file.rewind()?;
+            let exif_marker: [u8; 6] = [0x45, 0x78, 0x69, 0x66, 0x00, 0x00];
+            let exif_exists = buffer.windows(6).position(|window| window == exif_marker).is_some();
+            let metadata = if exif_exists { Metadata::new_from_path(Path::new(input_path))? } else { Metadata::new() };
+
             let result = jpeg_compress(config.jpeg.as_ref(), &mut input_file, &metadata);
             match result {
                 Ok(mut data) => {
