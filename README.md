@@ -17,12 +17,14 @@ rs-image-compressor --input <INPUT> --output <OUTPUT> --config <CONFIG>
   "$schema": "https://raw.githubusercontent.com/apple-x-co/rs-image-compressor/refs/heads/main/schema/schema.json",
   "png": {
     "quality": 3,
+    "size": null,
     "strip": "all",
     "interlacing": "none",
     "optimize_alpha": true
   },
   "jpeg": {
     "quality": 70,
+    "size": null,
     "scan_optimization_mode": "all_components_together",
     "progressive_mode": false,
     "optimize_coding": true,

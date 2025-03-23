@@ -5,8 +5,16 @@ use std::fs::read_to_string;
 const JSON_SCHEMA_BYTES: &'static [u8] = include_bytes!("../schema/schema.json");
 
 #[derive(Debug, Deserialize)]
+pub struct SizeConfig {
+    pub width: u32,
+    pub height: u32,
+    pub filter: String,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct PngConfig {
     pub quality: u8,
+    pub size: Option<SizeConfig>,
     pub strip: String,
     pub interlacing: String,
     pub optimize_alpha: bool,
@@ -15,6 +23,7 @@ pub struct PngConfig {
 #[derive(Debug, Deserialize)]
 pub struct JpegConfig {
     pub quality: u8,
+    pub size: Option<SizeConfig>,
     pub scan_optimization_mode: String,
     pub progressive_mode: bool,
     pub optimize_coding: bool,
@@ -33,6 +42,7 @@ impl Default for PngConfig {
     fn default() -> Self {
         Self {
             quality: 3,
+            size: None,
             strip: "all".into(),
             interlacing: "none".into(),
             optimize_alpha: false,
@@ -44,6 +54,7 @@ impl Default for JpegConfig {
     fn default() -> Self {
         Self {
             quality: 70,
+            size: None,
             scan_optimization_mode: "all_components_together".to_string(),
             progressive_mode: false,
             optimize_coding: true,

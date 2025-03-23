@@ -12,6 +12,38 @@
           "maximum": 6,
           "default": 3
         },
+        "size": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "width": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "filter": {
+              "type": "string",
+              "enum": [
+                "nearest",
+                "triangle",
+                "catmull_rom",
+                "gaussian",
+                "lanczos3"
+              ],
+              "default": "catmull_rom"
+            }
+          },
+          "required": [
+            "width",
+            "height",
+            "filter"
+          ]
+        },
         "strip": {
           "type": "string",
           "enum": [
@@ -36,6 +68,7 @@
       },
       "required": [
         "quality",
+        "size",
         "strip",
         "interlacing",
         "optimize_alpha"
@@ -50,6 +83,38 @@
           "minimum": 0,
           "maximum": 100,
           "default": 70
+        },
+        "size": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "width": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "filter": {
+              "type": "string",
+              "enum": [
+                "nearest",
+                "triangle",
+                "catmull_rom",
+                "gaussian",
+                "lanczos3"
+              ],
+              "default": "catmull_rom"
+            }
+          },
+          "required": [
+            "width",
+            "height",
+            "filter"
+          ]
         },
         "scan_optimization_mode": {
           "type": "string",
@@ -91,6 +156,7 @@
       },
       "required": [
         "quality",
+        "size",
         "scan_optimization_mode",
         "progressive_mode",
         "optimize_coding",

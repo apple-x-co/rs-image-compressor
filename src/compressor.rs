@@ -1,5 +1,6 @@
 use crate::config_json::{Config, JpegConfig, PngConfig};
 use anyhow::{anyhow, Context, Result};
+use image::imageops::FilterType;
 use image::ImageReader;
 use image::{GenericImageView, ImageFormat};
 use little_exif::exif_tag::ExifTag;
@@ -74,7 +75,7 @@ pub fn compress(config: Config, input_path: &String, output_path: &String) -> Re
                 }
                 Err(e) => {
                     return Err(anyhow!(
-                        "PNG compression failed for file: {}. Error: {}",
+                        "JPEG compression failed for file: {}. Error: {}",
                         input_path,
                         e
                     ));
@@ -202,10 +203,6 @@ fn jpeg_compress(
         }
     }
 
-    let (width, height) = dynamic_image.dimensions();
-    let rgb_image = dynamic_image.to_rgb8();
-    let bytes = rgb_image.into_raw();
-
     let default_config = JpegConfig::default();
     let (
         quality,
@@ -214,6 +211,7 @@ fn jpeg_compress(
         optimize_coding,
         use_scans_in_trellis,
         smoothing_factor,
+        size,
     ) = match config {
         Some(config) => (
             config.quality,
@@ -222,6 +220,7 @@ fn jpeg_compress(
             config.optimize_coding,
             config.use_scans_in_trellis,
             config.smoothing_factor,
+            config.size.as_ref(),
         ),
         None => (
             default_config.quality,
@@ -230,8 +229,24 @@ fn jpeg_compress(
             default_config.optimize_coding,
             default_config.use_scans_in_trellis,
             default_config.smoothing_factor,
+            default_config.size.as_ref(),
         ),
     };
+
+    if let Some(size) = size {
+        dynamic_image = match size.filter.as_str() {
+            "nearest" => dynamic_image.resize(size.width, size.height, FilterType::Nearest),
+            "triangle" => dynamic_image.resize(size.width, size.height, FilterType::Triangle),
+            "catmull_rom" => dynamic_image.resize(size.width, size.height, FilterType::CatmullRom),
+            "gaussian" => dynamic_image.resize(size.width, size.height, FilterType::Gaussian),
+            "lanczos3" => dynamic_image.resize(size.width, size.height, FilterType::Lanczos3),
+            _ => dynamic_image,
+        }
+    }
+
+    let (width, height) = dynamic_image.dimensions();
+    let rgb_image = dynamic_image.to_rgb8();
+    let bytes = rgb_image.into_raw();
 
     let color_space = ColorSpace::JCS_RGB;
     let mut compress = Compress::new(color_space);
