@@ -41,7 +41,7 @@ pub struct Config {
 impl Default for PngConfig {
     fn default() -> Self {
         Self {
-            quality: 3,
+            quality: 2,
             size: None,
             strip: "all".into(),
             interlacing: "none".into(),

@@ -10,7 +10,7 @@
           "description": "1: High, 6: Low",
           "minimum": 1,
           "maximum": 6,
-          "default": 3
+          "default": 2
         },
         "size": {
           "type": [
