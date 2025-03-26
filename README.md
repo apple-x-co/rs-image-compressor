@@ -20,7 +20,7 @@ rs-image-compressor --input <INPUT> --output <OUTPUT> --config <CONFIG>
     "size": null,
     "strip": "all",
     "interlacing": "none",
-    "optimize_alpha": true
+    "optimize_alpha": false
   },
   "jpeg": {
     "quality": 70,
@@ -40,4 +40,6 @@ rs-image-compressor --input <INPUT> --output <OUTPUT> --config <CONFIG>
 * PNG
   * [oxipng](https://crates.io/crates/oxipng)
 * JPEG
+  * ~~image::codecs::jpeg::JpegEncoder~~
+    * 圧縮画像のファイルサイズが元画像のファイルサイズより大きくなることがあったため不採用
   * [mozjpeg](https://crates.io/crates/mozjpeg)
