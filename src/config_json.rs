@@ -12,12 +12,24 @@ pub struct SizeConfig {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct LibdeflaterConfig {
+    pub compression: u8,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ZopfliConfig {
+    pub iterations: u8,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct PngConfig {
     pub quality: u8,
     pub size: Option<SizeConfig>,
     pub strip: String,
     pub interlacing: String,
     pub optimize_alpha: bool,
+    pub libdeflater: Option<LibdeflaterConfig>,
+    pub zopfli: Option<ZopfliConfig>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -46,6 +58,8 @@ impl Default for PngConfig {
             strip: "all".into(),
             interlacing: "none".into(),
             optimize_alpha: false,
+            libdeflater: None,
+            zopfli: None,
         }
     }
 }

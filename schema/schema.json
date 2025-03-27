@@ -64,11 +64,45 @@
         "optimize_alpha": {
           "type": "boolean",
           "default": false
+        },
+        "libdeflater": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "compression": {
+              "type": "integer",
+              "description": "0: Low, 12: High",
+              "minimum": 0,
+              "maximum": 12,
+              "default": 11
+            }
+          },
+          "required": [
+            "compression"
+          ]
+        },
+        "zopfli": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "iterations": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 15,
+              "default": 15
+            }
+          },
+          "required": [
+            "iterations"
+          ]
         }
       },
       "required": [
         "quality",
-        "size",
         "strip",
         "interlacing",
         "optimize_alpha"
@@ -156,7 +190,6 @@
       },
       "required": [
         "quality",
-        "size",
         "scan_optimization_mode",
         "progressive_mode",
         "optimize_coding",

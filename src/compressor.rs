@@ -8,6 +8,7 @@ use little_exif::filetype::FileExtension;
 use little_exif::metadata::Metadata;
 use std::fs::File;
 use std::io::{BufReader, Cursor, Read, Seek, Write};
+use std::num::NonZeroU8;
 use std::path::Path;
 
 pub fn compress(config: Config, input_path: &String, output_path: &String) -> Result<()> {
@@ -102,13 +103,15 @@ pub fn compress(config: Config, input_path: &String, output_path: &String) -> Re
 
 fn png_compress(config: Option<&PngConfig>, input_file: &mut File) -> Result<Vec<u8>> {
     let default_config = PngConfig::default();
-    let (quality, strip, interlacing, optimize_alpha, size) = match config {
+    let (quality, strip, interlacing, optimize_alpha, size, libdeflater, zopfli) = match config {
         Some(config) => (
             config.quality,
             config.strip.as_str(),
             config.interlacing.as_str(),
             config.optimize_alpha,
             config.size.as_ref(),
+            config.libdeflater.as_ref(),
+            config.zopfli.as_ref(),
         ),
         None => (
             default_config.quality,
@@ -116,6 +119,8 @@ fn png_compress(config: Option<&PngConfig>, input_file: &mut File) -> Result<Vec
             default_config.interlacing.as_str(),
             default_config.optimize_alpha,
             default_config.size.as_ref(),
+            default_config.libdeflater.as_ref(),
+            default_config.zopfli.as_ref(),
         ),
     };
 
@@ -151,6 +156,12 @@ fn png_compress(config: Option<&PngConfig>, input_file: &mut File) -> Result<Vec
         _ => Some(oxipng::Interlacing::None),
     };
     options.optimize_alpha = optimize_alpha;
+
+    if let Some(libdeflater) = libdeflater {
+        options.deflate = oxipng::Deflaters::Libdeflater { compression: libdeflater.compression };
+    } else if let Some(zopfli) = zopfli {
+        options.deflate = oxipng::Deflaters::Zopfli { iterations: NonZeroU8::new(zopfli.iterations).unwrap() };
+    }
 
     let png_result = oxipng::optimize_from_memory(&bytes, &options);
     match png_result {
