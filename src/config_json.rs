@@ -36,7 +36,7 @@ pub struct PngConfig {
 pub struct JpegConfig {
     pub quality: u8,
     pub size: Option<SizeConfig>,
-    pub scan_optimization_mode: String,
+    pub scan_optimization_mode: Option<String>,
     pub progressive_mode: bool,
     pub optimize_coding: bool,
     pub use_scans_in_trellis: bool,
@@ -69,12 +69,12 @@ impl Default for JpegConfig {
         Self {
             quality: 70,
             size: None,
-            scan_optimization_mode: "all_components_together".to_string(),
+            scan_optimization_mode: Some("all_components_together".into()),
             progressive_mode: false,
             optimize_coding: true,
             use_scans_in_trellis: false,
             smoothing_factor: 0,
-            exif: "none".to_string(),
+            exif: "none".into(),
         }
     }
 }

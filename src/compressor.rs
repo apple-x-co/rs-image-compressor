@@ -211,7 +211,7 @@ fn jpeg_compress(
     ) = match config {
         Some(config) => (
             config.quality,
-            config.scan_optimization_mode.as_str(),
+            config.scan_optimization_mode.as_ref(),
             config.progressive_mode,
             config.optimize_coding,
             config.use_scans_in_trellis,
@@ -220,7 +220,7 @@ fn jpeg_compress(
         ),
         None => (
             default_config.quality,
-            default_config.scan_optimization_mode.as_str(),
+            default_config.scan_optimization_mode.as_ref(),
             default_config.progressive_mode,
             default_config.optimize_coding,
             default_config.use_scans_in_trellis,
@@ -284,8 +284,8 @@ fn jpeg_compress(
     let mut compress = mozjpeg::Compress::new(color_space);
     compress.set_size(width as usize, height as usize);
     compress.set_quality(quality as f32);
-    if scan_optimization_mode != "none" {
-        compress.set_scan_optimization_mode(match scan_optimization_mode {
+    if let Some(scan_optimization_mode) = scan_optimization_mode {
+        compress.set_scan_optimization_mode(match scan_optimization_mode.as_str() {
             "all_components_together" => mozjpeg::ScanMode::AllComponentsTogether,
             "scan_per_component" => mozjpeg::ScanMode::ScanPerComponent,
             _ => mozjpeg::ScanMode::Auto,

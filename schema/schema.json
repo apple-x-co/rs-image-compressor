@@ -151,12 +151,14 @@
           ]
         },
         "scan_optimization_mode": {
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "enum": [
             "all_components_together",
             "scan_per_component",
-            "auto",
-            "none"
+            "auto"
           ],
           "default": "none"
         },
@@ -190,7 +192,6 @@
       },
       "required": [
         "quality",
-        "scan_optimization_mode",
         "progressive_mode",
         "optimize_coding",
         "use_scans_in_trellis",
