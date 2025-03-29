@@ -16,16 +16,19 @@ rs-image-compressor --input <INPUT> --output <OUTPUT> --config <CONFIG>
 
 `png`
 
-|                         | Type    | Range   | Enum                  | Default | Note     |
-|-------------------------|---------|---------|-----------------------|---------|----------|
-| quality                 | Integer | 1 .. 6  | -                     | 2       | 1: High  |
-| size.width              | Integer | -       | -                     | -       |          |
-| size.height             | Integer | -       | -                     | -       |          |
-| strip                   | String  | -       | none<br/>safe<br/>all | all     |          |
-| interlacing             | String  | -       | none<br/>adam7        | none    |          |
-| optimize_alpha          | Bool    | -       | -                     | false   |          |
-| libdeflater.compression | Integer | 0 .. 12 | -                     | -       | 12: High |
-| zopfli.iterations       | Integer | 1 .. 15 | -                     | -       |          |
+|                         | Type    | Range    | Enum                  | Default | Note     |
+|-------------------------|---------|----------|-----------------------|---------|----------|
+| quality                 | Integer | 1 .. 6   | -                     | 2       | 1: High  |
+| size.width              | Integer | -        | -                     | -       |          |
+| size.height             | Integer | -        | -                     | -       |          |
+| strip                   | String  | -        | none<br/>safe<br/>all | all     |          |
+| interlacing             | String  | -        | none<br/>adam7        | none    |          |
+| optimize_alpha          | Bool    | -        | -                     | false   |          |
+| libdeflater.compression | Integer | 0 .. 12  | -                     | -       | 12: High |
+| zopfli.iterations       | Integer | 1 .. 15  | -                     | -       |          |
+| lossy.quality_min       | Integer | 0 .. 100 | -                     | -       |          |
+| lossy.quality_max       | Integer | 0 .. 100 | -                     | -       |          |
+| lossy.speed             | Integer | 1 .. 10  | -                     | -       |          |
 
 `jpeg`
 
@@ -46,5 +49,6 @@ rs-image-compressor --input <INPUT> --output <OUTPUT> --config <CONFIG>
 
 * PNG
   * [oxipng](https://crates.io/crates/oxipng)
+  * [pngquant](https://pngquant.org)
 * JPEG
   * [mozjpeg](https://crates.io/crates/mozjpeg)

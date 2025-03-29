@@ -1,7 +1,7 @@
 use crate::config_json::{Config, JpegConfig, PngConfig};
 use anyhow::{anyhow, Context, Result};
 use image::imageops::FilterType;
-use image::ImageReader;
+use image::{DynamicImage, ImageReader};
 use image::{GenericImageView, ImageFormat};
 use little_exif::exif_tag::ExifTag;
 use little_exif::filetype::FileExtension;
@@ -50,8 +50,15 @@ pub fn compress(config: Config, input_path: &String, output_path: &String) -> Re
             input_file.read_exact(&mut buffer)?;
             input_file.rewind()?;
             let exif_marker: [u8; 6] = [0x45, 0x78, 0x69, 0x66, 0x00, 0x00];
-            let exif_exists = buffer.windows(6).position(|window| window == exif_marker).is_some();
-            let metadata = if exif_exists { Metadata::new_from_path(Path::new(input_path))? } else { Metadata::new() };
+            let exif_exists = buffer
+                .windows(6)
+                .position(|window| window == exif_marker)
+                .is_some();
+            let metadata = if exif_exists {
+                Metadata::new_from_path(Path::new(input_path))?
+            } else {
+                Metadata::new()
+            };
 
             let result = jpeg_compress(config.jpeg.as_ref(), &mut input_file, &metadata);
             match result {
@@ -103,26 +110,29 @@ pub fn compress(config: Config, input_path: &String, output_path: &String) -> Re
 
 fn png_compress(config: Option<&PngConfig>, input_file: &mut File) -> Result<Vec<u8>> {
     let default_config = PngConfig::default();
-    let (quality, strip, interlacing, optimize_alpha, size, libdeflater, zopfli) = match config {
-        Some(config) => (
-            config.quality,
-            config.strip.as_str(),
-            config.interlacing.as_str(),
-            config.optimize_alpha,
-            config.size.as_ref(),
-            config.libdeflater.as_ref(),
-            config.zopfli.as_ref(),
-        ),
-        None => (
-            default_config.quality,
-            default_config.strip.as_str(),
-            default_config.interlacing.as_str(),
-            default_config.optimize_alpha,
-            default_config.size.as_ref(),
-            default_config.libdeflater.as_ref(),
-            default_config.zopfli.as_ref(),
-        ),
-    };
+    let (quality, strip, interlacing, optimize_alpha, size, libdeflater, zopfli, lossy) =
+        match config {
+            Some(config) => (
+                config.quality,
+                config.strip.as_str(),
+                config.interlacing.as_str(),
+                config.optimize_alpha,
+                config.size.as_ref(),
+                config.libdeflater.as_ref(),
+                config.zopfli.as_ref(),
+                config.lossy.as_ref(),
+            ),
+            None => (
+                default_config.quality,
+                default_config.strip.as_str(),
+                default_config.interlacing.as_str(),
+                default_config.optimize_alpha,
+                default_config.size.as_ref(),
+                default_config.libdeflater.as_ref(),
+                default_config.zopfli.as_ref(),
+                default_config.lossy.as_ref(),
+            ),
+        };
 
     let reader = BufReader::new(input_file);
     let image_reader = ImageReader::new(reader)
@@ -142,6 +152,36 @@ fn png_compress(config: Option<&PngConfig>, input_file: &mut File) -> Result<Vec
         }
     }
 
+    let (width, height) = dynamic_image.dimensions();
+
+    if let Some(lossy) = lossy {
+        let bitmap = dynamic_image
+            .to_rgba8()
+            .pixels()
+            .map(|p| imagequant::RGBA::new(p.0[0], p.0[1], p.0[2], p.0[3]))
+            .collect::<Vec<imagequant::RGBA>>();
+
+        let mut attr = imagequant::new();
+        attr.set_quality(lossy.quality_min, lossy.quality_max)?;
+
+        if let Some(speed) = lossy.speed {
+            attr.set_speed(speed)?;
+        }
+
+        let mut liq_image = attr.new_image(&bitmap[..], width as usize, height as usize, 0.0)?;
+        let mut res = attr.quantize(&mut liq_image)?;
+        let (palette, pixels) = res.remapped(&mut liq_image)?;
+
+        let mut quantized_img = image::ImageBuffer::new(width, height);
+        for (x, y, pixel) in quantized_img.enumerate_pixels_mut() {
+            let idx = (y * width + x) as usize;
+            let p = &palette[pixels[idx] as usize];
+            *pixel = image::Rgba([p.r, p.g, p.b, p.a]);
+        }
+
+        dynamic_image = DynamicImage::ImageRgba8(quantized_img);
+    }
+
     let mut bytes = Vec::new();
     dynamic_image.write_to(&mut Cursor::new(&mut bytes), ImageFormat::Png)?;
 
@@ -158,16 +198,22 @@ fn png_compress(config: Option<&PngConfig>, input_file: &mut File) -> Result<Vec
     options.optimize_alpha = optimize_alpha;
 
     if let Some(libdeflater) = libdeflater {
-        options.deflate = oxipng::Deflaters::Libdeflater { compression: libdeflater.compression };
+        options.deflate = oxipng::Deflaters::Libdeflater {
+            compression: libdeflater.compression,
+        };
     } else if let Some(zopfli) = zopfli {
-        options.deflate = oxipng::Deflaters::Zopfli { iterations: NonZeroU8::new(zopfli.iterations).unwrap() };
+        options.deflate = oxipng::Deflaters::Zopfli {
+            iterations: NonZeroU8::new(zopfli.iterations).unwrap(),
+        };
     }
 
     let png_result = oxipng::optimize_from_memory(&bytes, &options);
     match png_result {
         Ok(data) => Ok(data),
         Err(e) => match e {
-            oxipng::PngError::DeflatedDataTooLong(size) => Err(anyhow!("Deflated data too long: {}", size)),
+            oxipng::PngError::DeflatedDataTooLong(size) => {
+                Err(anyhow!("Deflated data too long: {}", size))
+            }
             oxipng::PngError::TimedOut => Err(anyhow!("PNG optimization timed out")),
             oxipng::PngError::NotPNG => Err(anyhow!(
                 "Invalid PNG header: Not a PNG file or file is corrupted"
@@ -176,7 +222,9 @@ fn png_compress(config: Option<&PngConfig>, input_file: &mut File) -> Result<Vec
             oxipng::PngError::APNGOutOfOrder => Err(anyhow!("APNG chunks are out of order")),
             oxipng::PngError::InvalidData => Err(anyhow!("Invalid PNG data")),
             oxipng::PngError::TruncatedData => Err(anyhow!("Truncated PNG data")),
-            oxipng::PngError::ChunkMissing(chunk_type) => Err(anyhow!("Missing PNG chunk: {}", chunk_type)),
+            oxipng::PngError::ChunkMissing(chunk_type) => {
+                Err(anyhow!("Missing PNG chunk: {}", chunk_type))
+            }
             oxipng::PngError::InvalidDepthForType(bit_depth, color_type) => Err(anyhow!(
                 "Invalid bit depth for color type: bit_depth={:?}, color_type={:?}",
                 bit_depth,
@@ -187,8 +235,12 @@ fn png_compress(config: Option<&PngConfig>, input_file: &mut File) -> Result<Vec
                 expected,
                 actual
             )),
-            oxipng::PngError::C2PAMetadataPreventsChanges => Err(anyhow!("C2PA metadata prevents changes")),
-            oxipng::PngError::Other(message) => Err(anyhow!("PNG optimization failed: {}", message)),
+            oxipng::PngError::C2PAMetadataPreventsChanges => {
+                Err(anyhow!("C2PA metadata prevents changes"))
+            }
+            oxipng::PngError::Other(message) => {
+                Err(anyhow!("PNG optimization failed: {}", message))
+            }
             _ => Err(anyhow!("PNG optimization failed: {:?}", e)),
         },
     }

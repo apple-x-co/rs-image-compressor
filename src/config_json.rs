@@ -22,6 +22,13 @@ pub struct ZopfliConfig {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct LossyConfig {
+    pub quality_min: u8,
+    pub quality_max: u8,
+    pub speed: Option<i32>,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct PngConfig {
     pub quality: u8,
     pub size: Option<SizeConfig>,
@@ -30,6 +37,7 @@ pub struct PngConfig {
     pub optimize_alpha: bool,
     pub libdeflater: Option<LibdeflaterConfig>,
     pub zopfli: Option<ZopfliConfig>,
+    pub lossy: Option<LossyConfig>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -60,6 +68,7 @@ impl Default for PngConfig {
             optimize_alpha: false,
             libdeflater: None,
             zopfli: None,
+            lossy: None,
         }
     }
 }
