@@ -3,7 +3,7 @@ mod png_compressor;
 
 use crate::config_json::Config;
 use anyhow::{Context, Result, anyhow};
-use image::ImageFormat;
+use image::{GenericImageView, ImageFormat};
 use image::ImageReader;
 use little_exif::exif_tag::ExifTag;
 use little_exif::filetype::FileExtension;
@@ -14,12 +14,12 @@ use std::path::Path;
 use std::time::Instant;
 
 // TODO: できるだけ以下情報はこのプログラム側で表示する。各画像毎の圧縮プログラムでは出力しない。
-// [INFO] 圧縮開始: example_image.jpg
-// [INFO] 入力ファイル:
-//     - ファイル名: example_image.jpg
-//     - ファイルサイズ: 2.5 MB
-//     - 画像解像度: 1920x1080
-//     - 画像形式: JPEG
+// OK [INFO] 圧縮開始: example_image.jpg
+// OK [INFO] 入力ファイル:
+// OK     - ファイル名: example_image.jpg
+// OK     - ファイルサイズ: 2.5 MB
+// OK     - 画像解像度: 1920x1080
+// OK     - 画像形式: JPEG
 //
 // [INFO] 使用する圧縮アルゴリズム: JPEG（品質設定: 85）
 // [INFO] 圧縮前のサイズ: 2.5 MB
@@ -57,14 +57,16 @@ pub fn compress(
     if verbose {
         println!("Start");
         println!("Input:");
-        println!("\tFile name: {:?}", input_file_name);
-        // println!("\tSize: {:?} bytes", 1000); // FIXME:
-        // println!("\tResolution: {:?} x {:?}", 8000, 600); // FIXME:
-        // println!("\tFormat: JPEG"); // FIXME:
+        println!("\tFile name: {}", input_file_name);
     }
 
     let input_file = File::open(input_path)
         .with_context(|| format!("Failed to open input file: {}", input_path))?;
+
+    if verbose {
+        let metadata = input_file.metadata()?;
+        println!("\tSize: {} bytes", metadata.len());
+    }
 
     let reader = BufReader::new(input_file);
     let image_reader = ImageReader::new(reader)
@@ -75,6 +77,13 @@ pub fn compress(
         Some(format) => format,
         None => return Err(anyhow::anyhow!("Could not determine image format")),
     };
+
+    if verbose {
+        let dynamic_image = image_reader.decode()?;
+        let (width, height) = dynamic_image.dimensions();
+        println!("\tResolution: {} x {}", width, height);
+        println!("\tMime type: {}", image_format.to_mime_type());
+    }
 
     // NOTE: Compress image
     let compressed_data = match image_format {
@@ -159,7 +168,7 @@ pub fn compress(
 
     if verbose {
         println!("Output:");
-        println!("\tFile name: {:?}", output_file_name);
+        println!("\tFile name: {}", output_file_name);
         println!("Processing time: {:?}", now.elapsed());
         println!("End");
     }
