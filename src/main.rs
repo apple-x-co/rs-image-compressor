@@ -16,6 +16,9 @@ struct Args {
 
     #[arg(short, long)]
     config: Option<String>,
+
+    #[arg(short, long)]
+    verbose: bool,
 }
 
 fn main() -> Result<()> {
@@ -30,7 +33,7 @@ fn main() -> Result<()> {
         }
     };
 
-    compressor::compress(config, &args.input, &args.output)?;
+    compressor::compress(config, args.verbose, &args.input, &args.output)?;
 
     Ok(())
 }

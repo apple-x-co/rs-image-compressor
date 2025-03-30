@@ -10,6 +10,10 @@ rs-image-compressor --input <INPUT> --output <OUTPUT>
 rs-image-compressor --input <INPUT> --output <OUTPUT> --config <CONFIG>
 ```
 
+```text
+rs-image-compressor --input <INPUT> --output <OUTPUT> --verbose
+```
+
 ## Config
 
 * [JSON Schema](https://raw.githubusercontent.com/apple-x-co/rs-image-compressor/refs/heads/main/schema/schema.json)

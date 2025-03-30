@@ -1,10 +1,10 @@
+use crate::config_json::PngConfig;
+use anyhow::{anyhow, Context};
+use image::imageops::FilterType;
+use image::{DynamicImage, GenericImageView, ImageFormat, ImageReader};
 use std::fs::File;
 use std::io::{BufReader, Cursor};
-use image::{DynamicImage, GenericImageView, ImageFormat, ImageReader};
-use image::imageops::FilterType;
 use std::num::NonZeroU8;
-use anyhow::{anyhow, Context};
-use crate::config_json::PngConfig;
 
 pub fn compress(config: Option<&PngConfig>, input_file: &mut File) -> anyhow::Result<Vec<u8>> {
     let default_config = PngConfig::default();

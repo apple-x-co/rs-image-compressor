@@ -1,11 +1,11 @@
-use std::fs::File;
-use little_exif::metadata::Metadata;
-use std::io::BufReader;
+use crate::config_json::JpegConfig;
+use anyhow::{anyhow, Context};
+use image::imageops::FilterType;
 use image::{GenericImageView, ImageReader};
 use little_exif::exif_tag::ExifTag;
-use image::imageops::FilterType;
-use anyhow::{anyhow, Context};
-use crate::config_json::JpegConfig;
+use little_exif::metadata::Metadata;
+use std::fs::File;
+use std::io::BufReader;
 
 pub fn compress(
     config: Option<&JpegConfig>,

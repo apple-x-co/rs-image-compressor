@@ -1,18 +1,68 @@
-mod png_compressor;
 mod jpeg_compressor;
+mod png_compressor;
 
 use crate::config_json::Config;
-use anyhow::{anyhow, Context, Result};
-use image::ImageReader;
+use anyhow::{Context, Result, anyhow};
 use image::ImageFormat;
+use image::ImageReader;
 use little_exif::exif_tag::ExifTag;
 use little_exif::filetype::FileExtension;
 use little_exif::metadata::Metadata;
 use std::fs::File;
 use std::io::{BufReader, Read, Seek, Write};
 use std::path::Path;
+use std::time::Instant;
 
-pub fn compress(config: Config, input_path: &String, output_path: &String) -> Result<()> {
+// TODO: できるだけ以下情報はこのプログラム側で表示する。各画像毎の圧縮プログラムでは出力しない。
+// [INFO] 圧縮開始: example_image.jpg
+// [INFO] 入力ファイル:
+//     - ファイル名: example_image.jpg
+//     - ファイルサイズ: 2.5 MB
+//     - 画像解像度: 1920x1080
+//     - 画像形式: JPEG
+//
+// [INFO] 使用する圧縮アルゴリズム: JPEG（品質設定: 85）
+// [INFO] 圧縮前のサイズ: 2.5 MB
+// [INFO] 圧縮後のサイズ: 1.2 MB
+// [INFO] 圧縮率: 52%
+//
+// [INFO] 圧縮処理中...
+// [INFO] 圧縮完了: example_image_compressed.jpg
+//     - 出力ファイル: example_image_compressed.jpg
+//     - 出力ファイルサイズ: 1.2 MB
+//     - 出力形式: JPEG
+//
+// [INFO] 処理時間: 2.3秒
+//
+// 圧縮完了: example_image.jpg
+
+pub fn compress(
+    config: Config,
+    verbose: bool,
+    input_path: &String,
+    output_path: &String,
+) -> Result<()> {
+    let now = Instant::now();
+    let input_file_name = Path::new(input_path)
+        .file_name()
+        .unwrap()
+        .to_string_lossy()
+        .into_owned();
+    let output_file_name = Path::new(output_path)
+        .file_name()
+        .unwrap()
+        .to_string_lossy()
+        .into_owned();
+
+    if verbose {
+        println!("Start");
+        println!("Input:");
+        println!("\tFile name: {:?}", input_file_name);
+        // println!("\tSize: {:?} bytes", 1000); // FIXME:
+        // println!("\tResolution: {:?} x {:?}", 8000, 600); // FIXME:
+        // println!("\tFormat: JPEG"); // FIXME:
+    }
+
     let input_file = File::open(input_path)
         .with_context(|| format!("Failed to open input file: {}", input_path))?;
 
@@ -61,7 +111,8 @@ pub fn compress(config: Config, input_path: &String, output_path: &String) -> Re
                 Metadata::new()
             };
 
-            let result = jpeg_compressor::compress(config.jpeg.as_ref(), &mut input_file, &metadata);
+            let result =
+                jpeg_compressor::compress(config.jpeg.as_ref(), &mut input_file, &metadata);
             match result {
                 Ok(mut data) => {
                     if let Some(jpeg_config) = config.jpeg {
@@ -105,6 +156,13 @@ pub fn compress(config: Config, input_path: &String, output_path: &String) -> Re
     output_file
         .write_all(&compressed_data)
         .with_context(|| format!("Failed to write to output file: {}", output_path))?;
+
+    if verbose {
+        println!("Output:");
+        println!("\tFile name: {:?}", output_file_name);
+        println!("Processing time: {:?}", now.elapsed());
+        println!("End");
+    }
 
     Ok(())
 }
