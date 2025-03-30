@@ -2,9 +2,9 @@ mod jpeg_compressor;
 mod png_compressor;
 
 use crate::config_json::Config;
-use anyhow::{Context, Result, anyhow};
-use image::{GenericImageView, ImageFormat};
+use anyhow::{anyhow, Context, Result};
 use image::ImageReader;
+use image::ImageFormat;
 use little_exif::exif_tag::ExifTag;
 use little_exif::filetype::FileExtension;
 use little_exif::metadata::Metadata;
@@ -12,29 +12,6 @@ use std::fs::File;
 use std::io::{BufReader, Read, Seek, Write};
 use std::path::Path;
 use std::time::Instant;
-
-// TODO: できるだけ以下情報はこのプログラム側で表示する。各画像毎の圧縮プログラムでは出力しない。
-// OK [INFO] 圧縮開始: example_image.jpg
-// OK [INFO] 入力ファイル:
-// OK     - ファイル名: example_image.jpg
-// OK     - ファイルサイズ: 2.5 MB
-// OK     - 画像解像度: 1920x1080
-// OK     - 画像形式: JPEG
-//
-// [INFO] 使用する圧縮アルゴリズム: JPEG（品質設定: 85）
-// [INFO] 圧縮前のサイズ: 2.5 MB
-// [INFO] 圧縮後のサイズ: 1.2 MB
-// [INFO] 圧縮率: 52%
-//
-// [INFO] 圧縮処理中...
-// [INFO] 圧縮完了: example_image_compressed.jpg
-//     - 出力ファイル: example_image_compressed.jpg
-//     - 出力ファイルサイズ: 1.2 MB
-//     - 出力形式: JPEG
-//
-// [INFO] 処理時間: 2.3秒
-//
-// 圧縮完了: example_image.jpg
 
 pub fn compress(
     config: Config,
@@ -55,8 +32,8 @@ pub fn compress(
         .into_owned();
 
     if verbose {
-        println!("Start");
-        println!("Input:");
+        println!("===== Start =====");
+        println!("\n[Input]");
         println!("\tFile name: {}", input_file_name);
     }
 
@@ -64,7 +41,7 @@ pub fn compress(
         .with_context(|| format!("Failed to open input file: {}", input_path))?;
 
     if verbose {
-        let metadata = input_file.metadata()?;
+        let metadata = File::open(input_path)?.metadata()?;
         println!("\tSize: {} bytes", metadata.len());
     }
 
@@ -79,15 +56,50 @@ pub fn compress(
     };
 
     if verbose {
-        let dynamic_image = image_reader.decode()?;
-        let (width, height) = dynamic_image.dimensions();
-        println!("\tResolution: {} x {}", width, height);
+        let (width, height) = image_reader.into_dimensions()?;
+        println!("\tResolution: {}x{}", width, height);
         println!("\tMime type: {}", image_format.to_mime_type());
     }
 
     // NOTE: Compress image
     let compressed_data = match image_format {
         ImageFormat::Png => {
+            if verbose {
+                if let Some(png_config) = config.png.as_ref() {
+                    println!("\n[Options]");
+                    println!("\tQuality: {}", png_config.quality);
+
+                    if let Some(size) = png_config.size.as_ref() {
+                        println!("\tSize: {}x{}", size.width, size.width);
+                    }
+
+                    println!("\tInterlacing: {}", png_config.interlacing);
+                    println!("\tOptimize_alpha: {}", png_config.optimize_alpha);
+
+                    if let Some(libdeflater) = png_config.libdeflater.as_ref() {
+                        println!("\tLibdeflater:");
+                        println!("\t\tCompression: {}", libdeflater.compression);
+                    }
+
+                    if let Some(zopfli) = png_config.zopfli.as_ref() {
+                        println!("\tZopfli:");
+                        println!("\t\tIterations: {}", zopfli.iterations);
+                    }
+
+                    if let Some(lossy) = png_config.lossy.as_ref() {
+                        println!("\tLossy:");
+                        println!("\t\tQuality_min: {}", lossy.quality_min);
+                        println!("\t\tQuality_max: {}", lossy.quality_max);
+                        if let Some(colors) = lossy.colors {
+                            println!("\t\tColors: {}", colors);
+                        }
+                        if let Some(speed) = lossy.speed {
+                            println!("\t\tSpeed: {}", speed);
+                        }
+                    }
+                }
+            }
+
             let mut input_file = File::open(input_path)
                 .with_context(|| format!("Failed to open input file: {}", input_path))?;
             let result = png_compressor::compress(config.png.as_ref(), &mut input_file);
@@ -103,6 +115,27 @@ pub fn compress(
             }
         }
         ImageFormat::Jpeg => {
+            if verbose {
+                if let Some(jpeg_config) = config.jpeg.as_ref() {
+                    println!("\n[Options]");
+                    println!("\tQuality: {}", jpeg_config.quality);
+
+                    if let Some(size) = jpeg_config.size.as_ref() {
+                        println!("\tSize: {}x{}", size.width, size.width);
+                    }
+
+                    if let Some(scan_optimization_mode) = jpeg_config.scan_optimization_mode.as_ref() {
+                        println!("\tScan optimization mode: {}", scan_optimization_mode);
+                    }
+
+                    println!("\tProgressive mode: {}", jpeg_config.progressive_mode);
+                    println!("\tOptimize coding: {}", jpeg_config.optimize_coding);
+                    println!("\tUse scans in trellis: {}", jpeg_config.use_scans_in_trellis);
+                    println!("\tSmoothing factor: {}", jpeg_config.smoothing_factor);
+                    println!("\tExif: {}", jpeg_config.exif);
+                }
+            }
+
             let mut input_file = File::open(input_path)
                 .with_context(|| format!("Failed to open input file: {}", input_path))?;
 
@@ -167,10 +200,17 @@ pub fn compress(
         .with_context(|| format!("Failed to write to output file: {}", output_path))?;
 
     if verbose {
-        println!("Output:");
+        let metadata = File::open(input_path)?.metadata()?;
+        let compressed_metadata = File::open(output_path)?.metadata()?;
+        println!("\n[Result]");
+        println!("\tBefore: {} bytes", metadata.len());
+        println!("\tAfter: {} bytes", compressed_metadata.len());
+        println!("\tRatio: {:.2} %", (compressed_metadata.len() as f64 / metadata.len() as f64) * 100.0);
+
+        println!("\n[Output]");
         println!("\tFile name: {}", output_file_name);
-        println!("Processing time: {:?}", now.elapsed());
-        println!("End");
+        println!("\tProcessing time: {:?} sec", now.elapsed().as_secs_f64());
+        println!("\n===== End =====");
     }
 
     Ok(())
