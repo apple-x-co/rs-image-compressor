@@ -60,7 +60,12 @@ pub fn compress(config: Option<&PngConfig>, input_file: &mut File) -> anyhow::Re
             .collect::<Vec<imagequant::RGBA>>();
 
         let mut attr = imagequant::new();
+
         attr.set_quality(lossy.quality_min, lossy.quality_max)?;
+
+        if let Some(colors) = lossy.colors {
+            attr.set_max_colors(colors)?;
+        }
 
         if let Some(speed) = lossy.speed {
             attr.set_speed(speed)?;

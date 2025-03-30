@@ -20,19 +20,20 @@ rs-image-compressor --input <INPUT> --output <OUTPUT> --verbose
 
 `png`
 
-|                         | Type    | Range    | Enum                  | Default | Note     |
-|-------------------------|---------|----------|-----------------------|---------|----------|
-| quality                 | Integer | 1 .. 6   | -                     | 2       | 1: High  |
-| size.width              | Integer | -        | -                     | -       |          |
-| size.height             | Integer | -        | -                     | -       |          |
-| strip                   | String  | -        | none<br/>safe<br/>all | all     |          |
-| interlacing             | String  | -        | none<br/>adam7        | none    |          |
-| optimize_alpha          | Bool    | -        | -                     | false   |          |
-| libdeflater.compression | Integer | 0 .. 12  | -                     | -       | 12: High |
-| zopfli.iterations       | Integer | 1 .. 15  | -                     | -       |          |
-| lossy.quality_min       | Integer | 0 .. 100 | -                     | -       |          |
-| lossy.quality_max       | Integer | 0 .. 100 | -                     | -       |          |
-| lossy.speed             | Integer | 1 .. 10  | -                     | -       |          |
+|                         | Type    | Range    | Enum                                         | Default | Note     |
+|-------------------------|---------|----------|----------------------------------------------|---------|----------|
+| quality                 | Integer | 1 .. 6   | -                                            | 2       | 1: High  |
+| size.width              | Integer | -        | -                                            | -       |          |
+| size.height             | Integer | -        | -                                            | -       |          |
+| strip                   | String  | -        | none<br/>safe<br/>all                        | all     |          |
+| interlacing             | String  | -        | none<br/>adam7                               | none    |          |
+| optimize_alpha          | Bool    | -        | -                                            | false   |          |
+| libdeflater.compression | Integer | 0 .. 12  | -                                            | -       | 12: High |
+| zopfli.iterations       | Integer | 1 .. 15  | -                                            | -       |          |
+| lossy.quality_min       | Integer | 0 .. 100 | -                                            | -       |          |
+| lossy.quality_max       | Integer | 0 .. 100 | -                                            | -       |          |
+| lossy.speed             | Integer | 1 .. 10  | -                                            | -       |          |
+| lossy.colors            | Integer | -        | 4<br/>8<br/>16<br/>32<br/>64<br/>128<br/>256 | -       |          |
 
 `jpeg`
 

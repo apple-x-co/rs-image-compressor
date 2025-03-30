@@ -26,6 +26,7 @@ pub struct LossyConfig {
     pub quality_min: u8,
     pub quality_max: u8,
     pub speed: Option<i32>,
+    pub colors: Option<u32>,
 }
 
 #[derive(Debug, Deserialize)]
