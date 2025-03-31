@@ -47,7 +47,7 @@ rs-image-compressor --input <INPUT> --output <OUTPUT> --verbose
 | optimize_coding        | Bool    | -        | -                                                       | true                    |           |
 | use_scans_in_trellis   | Bool    | -        | -                                                       | false                   |           |
 | smoothing_factor       | Integer | 0 .. 100 | -                                                       | 0                       |           |
-| exuf                   | String  | -        | none<br/>orientation<br/>all                            | none                    |           |
+| exif                   | String  | -        | none<br/>orientation<br/>all                            | none                    |           |
 
 
 ## Supported Images
