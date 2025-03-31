@@ -73,8 +73,9 @@ pub fn compress(
                         println!("\tSize: {}x{}", size.width, size.width);
                     }
 
+                    println!("\tStrip: {}", png_config.strip);
                     println!("\tInterlacing: {}", png_config.interlacing);
-                    println!("\tOptimize_alpha: {}", png_config.optimize_alpha);
+                    println!("\tOptimize alpha: {}", png_config.optimize_alpha);
 
                     if let Some(libdeflater) = png_config.libdeflater.as_ref() {
                         println!("\tLibdeflater:");
