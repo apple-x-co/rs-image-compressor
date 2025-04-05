@@ -74,4 +74,4 @@ rs-image-compressor --input <INPUT> --output <OUTPUT> --verbose
 * JPEG
   * [mozjpeg](https://github.com/mozilla/mozjpeg)
 * WebP
-  * [webp](https://github.com/jaredforth/webp)
+  * [webp](https://github.com/jaredforth/webp)（libwebp-sys wrapper）
