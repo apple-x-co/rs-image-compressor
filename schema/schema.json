@@ -246,6 +246,67 @@
         "smoothing_factor",
         "exif"
       ]
+    },
+    "webp": {
+      "type": "object",
+      "properties": {
+        "quality": {
+          "type": "integer",
+          "description": "100: High, 0: Low",
+          "minimum": 0,
+          "maximum": 100,
+          "default": 75
+        },
+        "method": {
+          "type": "integer",
+          "description": "6: High, 0:Low",
+          "minimum": 0,
+          "maximum": 6,
+          "default": 3
+        },
+        "target_size": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "target_psnr": {
+          "type": "number",
+          "minimum": 25.0,
+          "maximum": 60.0
+        },
+        "lossless": {
+          "type": "boolean",
+          "default": false
+        },
+        "alpha_compression": {
+          "type": "boolean",
+          "default": true
+        },
+        "alpha_quality": {
+          "type": "integer",
+          "description": "100: High, 0: Low",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "pass": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 1
+        },
+        "preprocessing": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 7,
+          "default": 0
+        },
+        "autofilter": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "required": [
+        "quality"
+      ]
     }
   }
 }

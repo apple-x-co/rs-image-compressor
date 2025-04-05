@@ -54,9 +54,24 @@ pub struct JpegConfig {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct WebpConfig {
+    pub quality: u8,
+    pub method: Option<u8>,
+    pub target_size: Option<u8>,
+    pub target_psnr: Option<f32>,
+    pub lossless: Option<bool>,
+    pub alpha_compression: Option<bool>,
+    pub alpha_quality: Option<u8>,
+    pub pass: Option<u8>,
+    pub preprocessing: Option<u8>,
+    pub autofilter: Option<bool>,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct Config {
     pub png: Option<PngConfig>,
     pub jpeg: Option<JpegConfig>,
+    pub webp: Option<WebpConfig>,
 }
 
 impl Default for PngConfig {
@@ -89,11 +104,29 @@ impl Default for JpegConfig {
     }
 }
 
+impl Default for WebpConfig {
+    fn default() -> Self {
+        Self {
+            quality: 70,
+            method: None,
+            target_size: None,
+            target_psnr: None,
+            lossless: Some(false),
+            alpha_compression: Some(true),
+            alpha_quality: None,
+            pass: None,
+            preprocessing: None,
+            autofilter: None,
+        }
+    }
+}
+
 impl Default for Config {
     fn default() -> Self {
         Self {
             png: Some(PngConfig::default()),
             jpeg: Some(JpegConfig::default()),
+            webp: Some(WebpConfig::default()),
         }
     }
 }

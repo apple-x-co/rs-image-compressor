@@ -49,11 +49,20 @@ rs-image-compressor --input <INPUT> --output <OUTPUT> --verbose
 | smoothing_factor       | Integer | 0 .. 100 | -                                                       | 0                       |           |
 | exif                   | String  | -        | none<br/>orientation<br/>all                            | none                    |           |
 
+`WebP`
+
+|                        | Type    | Range    | Enum                                                    | Default | Note      |
+|------------------------|---------|----------|---------------------------------------------------------|---------|-----------|
+| quality                | Integer | 1 .. 100 | -                                                       | 75      | 100: High |
+
+👉 [See samples](https://github.com/apple-x-co/rs-image-compressor-benchmark)
 
 ## Supported Images
 
 * PNG
-  * [oxipng](https://crates.io/crates/oxipng)
+  * [oxipng](https://github.com/shssoichiro/oxipng)
   * [pngquant](https://pngquant.org)
 * JPEG
-  * [mozjpeg](https://crates.io/crates/mozjpeg)
+  * [mozjpeg](https://github.com/mozilla/mozjpeg)
+* WebP
+  * [webp](https://github.com/jaredforth/webp)
