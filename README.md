@@ -51,9 +51,18 @@ rs-image-compressor --input <INPUT> --output <OUTPUT> --verbose
 
 `WebP`
 
-|                        | Type    | Range    | Enum                                                    | Default | Note      |
-|------------------------|---------|----------|---------------------------------------------------------|---------|-----------|
-| quality                | Integer | 1 .. 100 | -                                                       | 75      | 100: High |
+|                   | Type    | Range        | Enum | Default | Note                        |
+|-------------------|---------|--------------|------|---------|-----------------------------|
+| quality           | Integer | 1 .. 100     | -    | 75      | 100: High                   |
+| method            | Integer | 0 .. 6       | -    | -       | 6: High                     |
+| target_size       | Integer |              | -    | -       |                             |
+| target_psnr       | Integer | 25.0 .. 60.0 | -    | -       |                             |
+| lossless          | Bool    |              | -    | -       |                             |
+| alpha_compression | Bool    |              | -    | -       | false when lossless is true |
+| alpha_quality     | Integer | 0 .. 100     | -    | -       | 100: High                   |
+| pass              | Integer | 1 .. 100     | -    | -       |                             |
+| preprocessing     | Integer | 0 .. 7       | -    | -       |                             |
+| autofilter        | Bool    |              | -    | -       |                             |
 
 👉 [See samples](https://github.com/apple-x-co/rs-image-compressor-benchmark)
 
