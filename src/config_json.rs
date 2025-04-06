@@ -68,10 +68,16 @@ pub struct WebpConfig {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct GifConfig {
+    pub quality: u8,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct Config {
     pub png: Option<PngConfig>,
     pub jpeg: Option<JpegConfig>,
     pub webp: Option<WebpConfig>,
+    pub gif: Option<GifConfig>,
 }
 
 impl Default for PngConfig {
@@ -121,12 +127,21 @@ impl Default for WebpConfig {
     }
 }
 
+impl Default for GifConfig {
+    fn default() -> Self {
+        Self {
+            quality: 75,
+        }
+    }
+}
+
 impl Default for Config {
     fn default() -> Self {
         Self {
             png: Some(PngConfig::default()),
             jpeg: Some(JpegConfig::default()),
             webp: Some(WebpConfig::default()),
+            gif: Some(GifConfig::default())
         }
     }
 }

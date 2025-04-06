@@ -1,6 +1,7 @@
 mod jpeg_compressor;
 mod png_compressor;
 mod webp_compressor;
+mod gif_compressor;
 
 use crate::config_json::Config;
 use anyhow::{anyhow, Context, Result};
@@ -199,6 +200,21 @@ pub fn compress(
                 Err(e) => {
                     return Err(anyhow!(
                         "WebP compression failed for file: {}. Error: {}",
+                        input_path,
+                        e
+                    ));
+                }
+            }
+        }
+        ImageFormat::Gif => {
+            let mut input_file = File::open(input_path)
+                .with_context(|| format!("Failed to open input file: {}", input_path))?;
+            let result = gif_compressor::compress(config.gif.as_ref(), &mut input_file);
+            match result {
+                Ok(data) => data,
+                Err(e) => {
+                    return Err(anyhow!(
+                        "GIF compression failed for file: {}. Error: {}",
                         input_path,
                         e
                     ));

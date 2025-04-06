@@ -1721,6 +1721,7 @@ dependencies = [
  "little_exif",
  "mozjpeg",
  "oxipng",
+ "salzweg",
  "serde",
  "serde_json",
  "webp",
@@ -1749,6 +1750,12 @@ name = "ryu"
 version = "1.0.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "28d3b2b1366ec20994f1fd18c3c594f05c5dd4bc44d8bb0c1c632c8d6829481f"
+
+[[package]]
+name = "salzweg"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "29a9ec85db1460d952e6556b945c1f3e287ddb44b79d6d72171daac24d4950d2"
 
 [[package]]
 name = "scopeguard"
