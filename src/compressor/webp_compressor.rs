@@ -4,11 +4,13 @@ use image::ImageReader;
 use std::ffi::c_int;
 use std::fs::File;
 use std::io::BufReader;
+use image::imageops::FilterType;
 
 pub fn compress(config: Option<&WebpConfig>, input_file: &mut File) -> anyhow::Result<Vec<u8>> {
     let default_config = WebpConfig::default();
     let (
         quality,
+        size,
         method,
         target_size,
         target_psnr,
@@ -21,6 +23,7 @@ pub fn compress(config: Option<&WebpConfig>, input_file: &mut File) -> anyhow::R
     ) = match config {
         Some(config) => (
             config.quality,
+            config.size.as_ref(),
             config.method,
             config.target_size,
             config.target_psnr,
@@ -33,6 +36,7 @@ pub fn compress(config: Option<&WebpConfig>, input_file: &mut File) -> anyhow::R
         ),
         None => (
             default_config.quality,
+            default_config.size.as_ref(),
             default_config.method,
             default_config.target_size,
             default_config.target_psnr,
@@ -50,7 +54,18 @@ pub fn compress(config: Option<&WebpConfig>, input_file: &mut File) -> anyhow::R
         .with_guessed_format()
         .context("Failed to guess image format")?;
 
-    let dynamic_image = image_reader.decode()?;
+    let mut dynamic_image = image_reader.decode()?;
+
+    if let Some(size) = size {
+        dynamic_image = match size.filter.as_str() {
+            "nearest" => dynamic_image.resize(size.width, size.height, FilterType::Nearest),
+            "triangle" => dynamic_image.resize(size.width, size.height, FilterType::Triangle),
+            "catmull_rom" => dynamic_image.resize(size.width, size.height, FilterType::CatmullRom),
+            "gaussian" => dynamic_image.resize(size.width, size.height, FilterType::Gaussian),
+            "lanczos3" => dynamic_image.resize(size.width, size.height, FilterType::Lanczos3),
+            _ => dynamic_image,
+        }
+    }
 
     let encoder = webp::Encoder::from_image(&dynamic_image)
         .map_err(|e| anyhow!("Failed to encode: {}", e))?;

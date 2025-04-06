@@ -56,6 +56,7 @@ pub struct JpegConfig {
 #[derive(Debug, Deserialize)]
 pub struct WebpConfig {
     pub quality: u8,
+    pub size: Option<SizeConfig>,
     pub method: Option<u8>,
     pub target_size: Option<u8>,
     pub target_psnr: Option<f32>,
@@ -114,6 +115,7 @@ impl Default for WebpConfig {
     fn default() -> Self {
         Self {
             quality: 70,
+            size: None,
             method: None,
             target_size: None,
             target_psnr: None,

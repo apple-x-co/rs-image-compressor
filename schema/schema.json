@@ -257,6 +257,38 @@
           "maximum": 100,
           "default": 75
         },
+        "size": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "width": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "filter": {
+              "type": "string",
+              "enum": [
+                "nearest",
+                "triangle",
+                "catmull_rom",
+                "gaussian",
+                "lanczos3"
+              ],
+              "default": "catmull_rom"
+            }
+          },
+          "required": [
+            "width",
+            "height",
+            "filter"
+          ]
+        },
         "method": {
           "type": "integer",
           "description": "6: High, 0:Low",
