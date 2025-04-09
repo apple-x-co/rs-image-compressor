@@ -71,6 +71,11 @@ pub struct WebpConfig {
 #[derive(Debug, Deserialize)]
 pub struct GifConfig {
     pub quality: u8,
+    pub size: Option<SizeConfig>,
+    pub max_colors: Option<u16>,
+    pub dithering: Option<bool>,
+    pub optimize_frames: Option<bool>,
+    pub loop_count: Option<u16>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -133,6 +138,11 @@ impl Default for GifConfig {
     fn default() -> Self {
         Self {
             quality: 75,
+            size: None,
+            max_colors: None,
+            dithering: None,
+            optimize_frames: None,
+            loop_count: None,
         }
     }
 }

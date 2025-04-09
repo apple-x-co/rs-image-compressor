@@ -1715,6 +1715,7 @@ version = "0.1.11"
 dependencies = [
  "anyhow",
  "clap",
+ "color_quant",
  "image",
  "imagequant",
  "jsonschema",
