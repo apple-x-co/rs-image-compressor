@@ -339,6 +339,71 @@
       "required": [
         "quality"
       ]
+    },
+    "gif": {
+      "type": "object",
+      "properties": {
+        "quality": {
+          "type": "integer",
+          "description": "100: High, 0: Low",
+          "minimum": 0,
+          "maximum": 100,
+          "default": 75
+        },
+        "size": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "width": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "filter": {
+              "type": "string",
+              "enum": [
+                "nearest",
+                "triangle",
+                "catmull_rom",
+                "gaussian",
+                "lanczos3"
+              ],
+              "default": "catmull_rom"
+            }
+          },
+          "required": [
+            "width",
+            "height",
+            "filter"
+          ]
+        },
+        "max_colors": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 256,
+          "default": 256
+        },
+        "dithering": {
+          "type": "boolean",
+          "default": false
+        },
+        "optimize_frames": {
+          "type": "boolean",
+          "default": false
+        },
+        "loop_count": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "quality"
+      ]
     }
   }
 }
