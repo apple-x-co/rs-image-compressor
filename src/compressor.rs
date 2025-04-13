@@ -192,6 +192,10 @@ pub fn compress(
             }
         }
         ImageFormat::WebP => {
+            if verbose {
+                // TODO:
+            }
+
             let mut input_file = File::open(input_path)
                 .with_context(|| format!("Failed to open input file: {}", input_path))?;
             let result = webp_compressor::compress(config.webp.as_ref(), &mut input_file);
@@ -207,6 +211,33 @@ pub fn compress(
             }
         }
         ImageFormat::Gif => {
+            if verbose {
+                if let Some(gif_config) = config.gif.as_ref() {
+                    println!("\n[Options]");
+                    println!("\tQuality: {}", gif_config.quality);
+
+                    if let Some(size) = gif_config.size.as_ref() {
+                        println!("\tSize: {}x{}", size.width, size.height);
+                    }
+
+                    if let Some(max_colors) = gif_config.max_colors {
+                        println!("\tMax colors: {}", max_colors);
+                    }
+
+                    if let Some(dithering) = gif_config.dithering {
+                        println!("\tDithering: {}", dithering);
+                    }
+
+                    if let Some(optimize_frames) = gif_config.optimize_frames {
+                        println!("\tOptimize frames: {}", optimize_frames);
+                    }
+
+                    if let Some(loop_count) = gif_config.loop_count {
+                        println!("\tLoop count: {}", loop_count);
+                    }
+                }
+            }
+
             let mut input_file = File::open(input_path)
                 .with_context(|| format!("Failed to open input file: {}", input_path))?;
             let result = gif_compressor::compress(config.gif.as_ref(), &mut input_file);

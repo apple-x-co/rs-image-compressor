@@ -15,8 +15,8 @@ mozjpeg = "0.10.13"
 little_exif = "0.6.3"
 imagequant = "4.3.4"
 webp = "0.3.0"
-salzweg = "0.1.4"
-color_quant = "1.1.0"
+gifski = "1.33.0"
+rgb = "0.8.50"
 
 [profile.release]
 opt-level = "s"       # サイズと速度のバランスを取る最適化
