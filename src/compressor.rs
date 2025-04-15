@@ -193,7 +193,12 @@ pub fn compress(
         }
         ImageFormat::WebP => {
             if verbose {
-                // TODO:
+                if let Some(webp_config) = config.webp.as_ref() {
+                    println!("\n[Options]");
+                    println!("\tQuality: {}", webp_config.quality);
+
+                    // TODO:
+                }
             }
 
             let mut input_file = File::open(input_path)
