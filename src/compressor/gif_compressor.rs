@@ -79,12 +79,22 @@ pub fn compress(config: Option<&GifConfig>, input_file: &mut File) -> Result<Vec
     };
 
     // 結果を保存するバッファ
-    let mut output_buffer = Vec::new();
-    let writer = BufWriter::new(&mut output_buffer);
+    let output_buffer = Vec::new();
 
     // gifskiのコレクタを作成
     let (collector, writer_handle) =
         gifski::new(settings).context("Failed to initialize gifski")?;
+
+    // 別スレッドでライターを開始
+    let writer_thread = std::thread::spawn(move || {
+        let mut buf = output_buffer; // スレッド内でバッファを所有
+        let writer = BufWriter::new(&mut buf);
+
+        let mut no_progress = NoProgress {};
+        let result = writer_handle.write(writer, &mut no_progress);
+
+        (result, buf)
+    });
 
     // フレームの累積時間
     let mut current_presentation_timestamp = 0.0;
@@ -160,6 +170,9 @@ pub fn compress(config: Option<&GifConfig>, input_file: &mut File) -> Result<Vec
 
             // フレームをコレクタに追加
             if let Err(e) = collector.add_frame_rgba(i, img_vec, current_presentation_timestamp) {
+                drop(collector);
+                let _ = writer_thread.join();
+
                 return Err(anyhow!("Failed to add frame {} (delay: {}s): {:?}",
                      i, frame_delay, e));
             }
@@ -172,13 +185,18 @@ pub fn compress(config: Option<&GifConfig>, input_file: &mut File) -> Result<Vec
     // コレクタをドロップして処理を完了させる
     drop(collector);
 
-    // 進捗報告なしで直接ライターハンドルを実行
-    let mut no_progress = NoProgress {};
-    writer_handle
-        .write(writer, &mut no_progress)
-        .map_err(|e| anyhow!("Gifski writer error: {:?}", e))?;
-
-    Ok(output_buffer)
+    // ライタースレッドの終了を待機
+    match writer_thread.join() {
+        Ok((writer_result, buffer)) => {
+            // ライターの結果をチェック
+            if let Err(e) = writer_result {
+                return Err(anyhow!("Gifski writer error: {:?}", e));
+            }
+            // バッファを返す
+            Ok(buffer)
+        },
+        Err(_) => Err(anyhow!("Gifski writer thread panicked")),
+    }
 }
 
 /// RGBA画像を gifski に適した形式に変換
