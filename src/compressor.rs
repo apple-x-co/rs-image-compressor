@@ -229,6 +229,10 @@ pub fn compress(
                         println!("\tFast: {}", fast);
                     }
 
+                    if let Some(loop_speed) = gif_config.loop_speed {
+                        println!("\tLoop speed: {}", loop_speed);
+                    }
+
                     if let Some(loop_count) = gif_config.loop_count {
                         println!("\tLoop count: {}", loop_count);
                     }

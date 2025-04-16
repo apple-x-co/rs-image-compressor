@@ -389,6 +389,10 @@
         "loop_count": {
           "type": "integer",
           "minimum": 1
+        },
+        "loop_speed": {
+          "type": "number",
+          "minimum": 0.01
         }
       },
       "required": [

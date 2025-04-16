@@ -74,6 +74,7 @@ pub struct GifConfig {
     pub size: Option<SizeConfig>,
     pub fast: Option<bool>,
     pub loop_count: Option<u16>,
+    pub loop_speed: Option<f64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -139,6 +140,7 @@ impl Default for GifConfig {
             size: None,
             fast: Some(false),
             loop_count: None,
+            loop_speed: None,
         }
     }
 }

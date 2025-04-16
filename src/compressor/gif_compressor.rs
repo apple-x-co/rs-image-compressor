@@ -12,17 +12,19 @@ use std::io::{BufWriter, Cursor, Read};
 pub fn compress(config: Option<&GifConfig>, input_file: &mut File) -> Result<Vec<u8>> {
     // 設定値の取得
     let default_config = GifConfig::default();
-    let (quality, size, fast, loop_count) = match config {
+    let (quality, size, fast, loop_speed, loop_count) = match config {
         Some(config) => (
             config.quality,
             config.size.as_ref(),
             config.fast,
+            config.loop_speed,
             config.loop_count,
         ),
         None => (
             default_config.quality,
             default_config.size.as_ref(),
             default_config.fast,
+            default_config.loop_speed,
             default_config.loop_count,
         ),
     };
@@ -58,7 +60,7 @@ pub fn compress(config: Option<&GifConfig>, input_file: &mut File) -> Result<Vec
         repeat: match loop_count {
             Some(0) => Repeat::Infinite, // 0は無限ループを意味する（GIF仕様に準拠）
             Some(count) => {
-                let count_u16 = (count as u16).min(u16::MAX);
+                let count_u16 = count.min(u16::MAX);
                 Repeat::Finite(count_u16)
             }
             None => Repeat::Infinite,
@@ -145,9 +147,14 @@ pub fn compress(config: Option<&GifConfig>, input_file: &mut File) -> Result<Vec
             // フレームデータの準備
             let frame_data = prepare_frame_data(&rgba_image);
 
-            // // GIFの遅延時間を正確に解釈する
-            let delay_ms = frame.delay().numer_denom_ms().0 as f64;
-            let frame_delay = (delay_ms / 1000.0).max(0.1);
+            let frame_delay = match loop_speed {
+                Some(loop_speed) => loop_speed,
+                None => {
+                    // GIFの遅延時間を正確に解釈する
+                    let delay_ms = frame.delay().numer_denom_ms().0 as f64;
+                    (delay_ms / 1000.0).max(0.1)
+                }
+            };
 
             // ★★★ デバッグログを追加 ★★★
             // println!(
