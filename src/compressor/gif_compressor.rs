@@ -1,7 +1,7 @@
 use crate::config_json::GifConfig;
-use anyhow::{Context, Result, anyhow};
+use anyhow::{anyhow, Context, Result};
 use gifski::collector::ImgVec;
-use gifski::{Repeat, Settings, progress::NoProgress};
+use gifski::{progress::NoProgress, Repeat, Settings};
 use image::codecs::gif::GifDecoder;
 use image::imageops::FilterType;
 use image::{AnimationDecoder, DynamicImage, RgbaImage};
@@ -12,21 +12,17 @@ use std::io::{BufWriter, Cursor, Read};
 pub fn compress(config: Option<&GifConfig>, input_file: &mut File) -> Result<Vec<u8>> {
     // 設定値の取得
     let default_config = GifConfig::default();
-    let (quality, size, _max_colors, _dithering, _optimize_frames, loop_count) = match config {
+    let (quality, size, fast, loop_count) = match config {
         Some(config) => (
             config.quality,
             config.size.as_ref(),
-            config.max_colors,
-            config.dithering,
-            config.optimize_frames,
+            config.fast,
             config.loop_count,
         ),
         None => (
             default_config.quality,
             default_config.size.as_ref(),
-            default_config.max_colors,
-            default_config.dithering,
-            default_config.optimize_frames,
+            default_config.fast,
             default_config.loop_count,
         ),
     };
@@ -58,16 +54,16 @@ pub fn compress(config: Option<&GifConfig>, input_file: &mut File) -> Result<Vec
 
     // gifski の設定
     let settings = Settings {
-        quality: quality,
+        quality,
         repeat: match loop_count {
-            Some(0) => Repeat::Infinite,  // 0は無限ループを意味する（GIF仕様に準拠）
+            Some(0) => Repeat::Infinite, // 0は無限ループを意味する（GIF仕様に準拠）
             Some(count) => {
                 let count_u16 = (count as u16).min(u16::MAX);
                 Repeat::Finite(count_u16)
-            },
+            }
             None => Repeat::Infinite,
         },
-        fast: false,
+        fast: fast.unwrap_or_else(|| false),
         width: match size {
             Some(size) => Some(size.width),
             None => None,
@@ -100,7 +96,7 @@ pub fn compress(config: Option<&GifConfig>, input_file: &mut File) -> Result<Vec
     let mut current_presentation_timestamp = 0.0;
 
     // 各フレームの処理と収集
-    for i in 0 .. frames.len() {
+    for i in 0..frames.len() {
         let frame = &frames[i];
 
         if frame.buffer().is_empty() {
@@ -114,9 +110,11 @@ pub fn compress(config: Option<&GifConfig>, input_file: &mut File) -> Result<Vec
             // リサイズが必要な場合
             if let Some(size_config) = size {
                 dynamic_image = match size_config.filter.as_str() {
-                    "nearest" => {
-                        dynamic_image.resize(size_config.width, size_config.height, FilterType::Nearest)
-                    }
+                    "nearest" => dynamic_image.resize(
+                        size_config.width,
+                        size_config.height,
+                        FilterType::Nearest,
+                    ),
                     "triangle" => dynamic_image.resize(
                         size_config.width,
                         size_config.height,
@@ -173,8 +171,12 @@ pub fn compress(config: Option<&GifConfig>, input_file: &mut File) -> Result<Vec
                 drop(collector);
                 let _ = writer_thread.join();
 
-                return Err(anyhow!("Failed to add frame {} (delay: {}s): {:?}",
-                     i, frame_delay, e));
+                return Err(anyhow!(
+                    "Failed to add frame {} (delay: {}s): {:?}",
+                    i,
+                    frame_delay,
+                    e
+                ));
             }
 
             // 累積時間を更新
@@ -194,7 +196,7 @@ pub fn compress(config: Option<&GifConfig>, input_file: &mut File) -> Result<Vec
             }
             // バッファを返す
             Ok(buffer)
-        },
+        }
         Err(_) => Err(anyhow!("Gifski writer thread panicked")),
     }
 }

@@ -382,17 +382,7 @@
             "filter"
           ]
         },
-        "max_colors": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 256,
-          "default": 256
-        },
-        "dithering": {
-          "type": "boolean",
-          "default": false
-        },
-        "optimize_frames": {
+        "fast": {
           "type": "boolean",
           "default": false
         },

@@ -225,16 +225,8 @@ pub fn compress(
                         println!("\tSize: {}x{}", size.width, size.height);
                     }
 
-                    if let Some(max_colors) = gif_config.max_colors {
-                        println!("\tMax colors: {}", max_colors);
-                    }
-
-                    if let Some(dithering) = gif_config.dithering {
-                        println!("\tDithering: {}", dithering);
-                    }
-
-                    if let Some(optimize_frames) = gif_config.optimize_frames {
-                        println!("\tOptimize frames: {}", optimize_frames);
+                    if let Some(fast) = gif_config.fast {
+                        println!("\tFast: {}", fast);
                     }
 
                     if let Some(loop_count) = gif_config.loop_count {

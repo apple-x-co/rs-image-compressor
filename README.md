@@ -76,4 +76,4 @@ rs-image-compressor --input <INPUT> --output <OUTPUT> --verbose
 * WebP
   * [webp](https://github.com/jaredforth/webp)（wrapper for libwebp-sys）
 * Gif
-  * [gifsicle](https://gitlab.com/kornelski/gifsicle-rust)
+  * [gifski](https://github.com/ImageOptim/gifski)

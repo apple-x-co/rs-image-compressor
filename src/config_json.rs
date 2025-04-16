@@ -72,9 +72,7 @@ pub struct WebpConfig {
 pub struct GifConfig {
     pub quality: u8,
     pub size: Option<SizeConfig>,
-    pub max_colors: Option<u16>,
-    pub dithering: Option<bool>,
-    pub optimize_frames: Option<bool>,
+    pub fast: Option<bool>,
     pub loop_count: Option<u16>,
 }
 
@@ -139,9 +137,7 @@ impl Default for GifConfig {
         Self {
             quality: 75,
             size: None,
-            max_colors: None,
-            dithering: None,
-            optimize_frames: None,
+            fast: Some(false),
             loop_count: None,
         }
     }
