@@ -77,3 +77,7 @@ rs-image-compressor --input <INPUT> --output <OUTPUT> --verbose
   * [webp](https://github.com/jaredforth/webp)（wrapper for libwebp-sys）
 * Gif
   * [gifski](https://github.com/ImageOptim/gifski)
+* SVG
+  * Looking for library ...
+* Libheif
+  * [libheif-rs](https://github.com/cykooz/libheif-rs) (wrapper for libheif-sys)

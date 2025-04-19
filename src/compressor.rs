@@ -2,11 +2,11 @@ mod jpeg_compressor;
 mod png_compressor;
 mod webp_compressor;
 mod gif_compressor;
+mod heif_compressor;
 
 use crate::config_json::Config;
+use crate::image::image_type;
 use anyhow::{anyhow, Context, Result};
-use image::ImageReader;
-use image::ImageFormat;
 use little_exif::exif_tag::ExifTag;
 use little_exif::filetype::FileExtension;
 use little_exif::metadata::Metadata;
@@ -14,6 +14,7 @@ use std::fs::File;
 use std::io::{BufReader, Read, Seek, Write};
 use std::path::Path;
 use std::time::Instant;
+use crate::image::image_type::ImageType;
 
 pub fn compress(
     config: Config,
@@ -47,25 +48,32 @@ pub fn compress(
         println!("\tSize: {} bytes", metadata.len());
     }
 
-    let reader = BufReader::new(input_file);
-    let image_reader = ImageReader::new(reader)
-        .with_guessed_format()
-        .context("Failed to guess image format")?;
+    // let reader = BufReader::new(input_file);
+    // let image_reader = ImageReader::new(reader)
+    //     .with_guessed_format()
+    //     .context("Failed to guess image format")?;
+    //
+    // let image_format = match image_reader.format() {
+    //     Some(format) => format,
+    //     None => return Err(anyhow::anyhow!("Could not determine image format")),
+    // };
+    //
+    // if verbose {
+    //     let (width, height) = image_reader.into_dimensions()?; // NOTE: HEIC など 不明なファイルを取得できないのでこれも独自実装する必要がある
+    //     println!("\tResolution: {}x{}", width, height);
+    //     println!("\tMime type: {}", image_format.to_mime_type());
+    // }
 
-    let image_format = match image_reader.format() {
-        Some(format) => format,
+    // TODO: HEIC? HEIF? のファイルを検出できるようにする!!
+    let mut buf_reader = BufReader::new(input_file);
+    let image_type = match image_type::image_type(&mut buf_reader) {
+        Some(image_type) => image_type,
         None => return Err(anyhow::anyhow!("Could not determine image format")),
     };
 
-    if verbose {
-        let (width, height) = image_reader.into_dimensions()?;
-        println!("\tResolution: {}x{}", width, height);
-        println!("\tMime type: {}", image_format.to_mime_type());
-    }
-
     // NOTE: Compress image
-    let compressed_data = match image_format {
-        ImageFormat::Png => {
+    let compressed_data = match image_type {
+        ImageType::PNG => {
             if verbose {
                 if let Some(png_config) = config.png.as_ref() {
                     println!("\n[Options]");
@@ -117,7 +125,7 @@ pub fn compress(
                 }
             }
         }
-        ImageFormat::Jpeg => {
+        ImageType::JPEG => {
             if verbose {
                 if let Some(jpeg_config) = config.jpeg.as_ref() {
                     println!("\n[Options]");
@@ -191,7 +199,7 @@ pub fn compress(
                 }
             }
         }
-        ImageFormat::WebP => {
+        ImageType::WEBP => {
             if verbose {
                 if let Some(webp_config) = config.webp.as_ref() {
                     println!("\n[Options]");
@@ -215,7 +223,7 @@ pub fn compress(
                 }
             }
         }
-        ImageFormat::Gif => {
+        ImageType::GIF => {
             if verbose {
                 if let Some(gif_config) = config.gif.as_ref() {
                     println!("\n[Options]");
@@ -253,9 +261,33 @@ pub fn compress(
                 }
             }
         }
-        _ => {
-            return Err(anyhow!("Not supported image format"));
+        ImageType::HEIF => {
+            if verbose {
+                if let Some(heif_config) = config.heif.as_ref() {
+                    println!("\n[Options]");
+                    println!("\tQuality: {}", heif_config.quality);
+
+                    // TODO:
+                }
+            }
+
+            let input_file = File::open(input_path)
+                .with_context(|| format!("Failed to open input file: {}", input_path))?;
+            let result = heif_compressor::compress(config.heif.as_ref(), input_file);
+            match result {
+                Ok(data) => data,
+                Err(e) => {
+                    return Err(anyhow!(
+                        "HEIF/HEIC compression failed for file: {}. Error: {}",
+                        input_path,
+                        e
+                    ));
+                }
+            }
         }
+        // _ => {
+        //     return Err(anyhow!("Not supported image format"));
+        // }
     };
 
     let mut output_file = File::create(output_path)

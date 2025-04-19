@@ -5,10 +5,16 @@ use std::fs::read_to_string;
 const JSON_SCHEMA_BYTES: &'static [u8] = include_bytes!("../schema/schema.json");
 
 #[derive(Debug, Deserialize)]
-pub struct SizeConfig {
+pub struct SizeFilterConfig {
     pub width: u32,
     pub height: u32,
     pub filter: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct SizeConfig {
+    pub width: u32,
+    pub height: u32,
 }
 
 #[derive(Debug, Deserialize)]
@@ -32,7 +38,7 @@ pub struct LossyConfig {
 #[derive(Debug, Deserialize)]
 pub struct PngConfig {
     pub quality: u8,
-    pub size: Option<SizeConfig>,
+    pub size: Option<SizeFilterConfig>,
     pub strip: String,
     pub interlacing: String,
     pub optimize_alpha: bool,
@@ -44,7 +50,7 @@ pub struct PngConfig {
 #[derive(Debug, Deserialize)]
 pub struct JpegConfig {
     pub quality: u8,
-    pub size: Option<SizeConfig>,
+    pub size: Option<SizeFilterConfig>,
     pub scan_optimization_mode: Option<String>,
     pub progressive_mode: bool,
     pub optimize_coding: bool,
@@ -56,7 +62,7 @@ pub struct JpegConfig {
 #[derive(Debug, Deserialize)]
 pub struct WebpConfig {
     pub quality: u8,
-    pub size: Option<SizeConfig>,
+    pub size: Option<SizeFilterConfig>,
     pub method: Option<u8>,
     pub target_size: Option<u8>,
     pub target_psnr: Option<f32>,
@@ -71,10 +77,16 @@ pub struct WebpConfig {
 #[derive(Debug, Deserialize)]
 pub struct GifConfig {
     pub quality: u8,
-    pub size: Option<SizeConfig>,
+    pub size: Option<SizeFilterConfig>,
     pub fast: Option<bool>,
     pub loop_count: Option<u16>,
     pub loop_speed: Option<f64>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct HeifConfig {
+    pub quality: u8,
+    pub size: Option<SizeConfig>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -83,6 +95,7 @@ pub struct Config {
     pub jpeg: Option<JpegConfig>,
     pub webp: Option<WebpConfig>,
     pub gif: Option<GifConfig>,
+    pub heif: Option<HeifConfig>,
 }
 
 impl Default for PngConfig {
@@ -145,13 +158,23 @@ impl Default for GifConfig {
     }
 }
 
+impl Default for HeifConfig {
+    fn default() -> Self {
+        Self {
+            quality: 50,
+            size: None,
+        }
+    }
+}
+
 impl Default for Config {
     fn default() -> Self {
         Self {
             png: Some(PngConfig::default()),
             jpeg: Some(JpegConfig::default()),
             webp: Some(WebpConfig::default()),
-            gif: Some(GifConfig::default())
+            gif: Some(GifConfig::default()),
+            heif: Some(HeifConfig::default()),
         }
     }
 }

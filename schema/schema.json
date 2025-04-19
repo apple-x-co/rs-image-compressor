@@ -398,6 +398,41 @@
       "required": [
         "quality"
       ]
+    },
+    "heif": {
+      "type": "object",
+      "properties": {
+        "quality": {
+          "type": "integer",
+          "description": "100: High, 0: Low",
+          "minimum": 0,
+          "maximum": 100,
+          "default": 75
+        },
+        "size": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "width": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": [
+            "width",
+            "height"
+          ]
+        }
+      },
+      "required": [
+        "quality"
+      ]
     }
   }
 }
