@@ -18,13 +18,14 @@ rs-image-compressor --input <INPUT> --output <OUTPUT> --verbose
 
 * [JSON Schema](https://raw.githubusercontent.com/apple-x-co/rs-image-compressor/refs/heads/main/schema/schema.json)
 
-`png`
+`PNG`
 
 |                         | Type    | Range    | Enum                                         | Default | Note     |
 |-------------------------|---------|----------|----------------------------------------------|---------|----------|
 | quality                 | Integer | 1 .. 6   | -                                            | 2       | 1: High  |
 | size.width              | Integer | -        | -                                            | -       |          |
 | size.height             | Integer | -        | -                                            | -       |          |
+| size.filter             | String  | -        | -                                            | -       |          |
 | strip                   | String  | -        | none<br/>safe<br/>all                        | all     |          |
 | interlacing             | String  | -        | none<br/>adam7                               | none    |          |
 | optimize_alpha          | Bool    | -        | -                                            | false   |          |
@@ -35,13 +36,14 @@ rs-image-compressor --input <INPUT> --output <OUTPUT> --verbose
 | lossy.speed             | Integer | 1 .. 10  | -                                            | -       |          |
 | lossy.colors            | Integer | -        | 4<br/>8<br/>16<br/>32<br/>64<br/>128<br/>256 | -       |          |
 
-`jpeg`
+`JPEG`
 
 |                        | Type    | Range    | Enum                                                    | Default                 | Note      |
 |------------------------|---------|----------|---------------------------------------------------------|-------------------------|-----------|
 | quality                | Integer | 1 .. 100 | -                                                       | 70                      | 100: High |
 | size.width             | Integer | -        | -                                                       | -                       |           |
 | size.height            | Integer | -        | -                                                       | -                       |           |
+| size.filter            | String  | -        | -                                                       | -                       |           |
 | scan_optimization_mode | String  | -        | all_components_together<br/>scan_per_component<br/>auto | all_components_together |           |
 | progressive_mode       | Bool    | -        | -                                                       | false                   |           |
 | optimize_coding        | Bool    | -        | -                                                       | true                    |           |
@@ -54,6 +56,9 @@ rs-image-compressor --input <INPUT> --output <OUTPUT> --verbose
 |                   | Type    | Range        | Enum | Default | Note                        |
 |-------------------|---------|--------------|------|---------|-----------------------------|
 | quality           | Integer | 1 .. 100     | -    | 75      | 100: High                   |
+| size.width        | Integer | -            | -    | -       |                             |
+| size.height       | Integer | -            | -    | -       |                             |
+| size.filter       | String  | -            | -    | -       |                             |
 | method            | Integer | 0 .. 6       | -    | -       | 6: High                     |
 | target_size       | Integer |              | -    | -       |                             |
 | target_psnr       | Integer | 25.0 .. 60.0 | -    | -       |                             |
@@ -63,6 +68,24 @@ rs-image-compressor --input <INPUT> --output <OUTPUT> --verbose
 | pass              | Integer | 1 .. 100     | -    | -       |                             |
 | preprocessing     | Integer | 0 .. 7       | -    | -       |                             |
 | autofilter        | Bool    |              | -    | -       |                             |
+
+`GIF`
+
+|             | Type    | Range    | Enum | Default | Note      |
+|-------------|---------|----------|------|---------|-----------|
+| quality     | Integer | 1 .. 100 | -    | 75      | 100: High |
+| size.width  | Integer | -        | -    | -       |           |
+| size.height | Integer | -        | -    | -       |           |
+| size.filter | String  | -        | -    | -       |           |
+| fast        | Bool    | -        | -    | -       |           |
+| loop_count  | Integer | -        | -    | -       |           |
+| loop_speed  | Integer | -        | -    | -       |           |
+
+`HEIF`
+
+|                   | Type    | Range        | Enum | Default | Note                        |
+|-------------------|---------|--------------|------|---------|-----------------------------|
+| quality           | Integer | 1 .. 100     | -    | -       | 100: High                   |
 
 👉 [See samples](https://github.com/apple-x-co/rs-image-compressor-benchmark)
 
@@ -79,5 +102,5 @@ rs-image-compressor --input <INPUT> --output <OUTPUT> --verbose
   * [gifski](https://github.com/ImageOptim/gifski)
 * SVG
   * Looking for library ...
-* Libheif
+* HEIF,HEIC
   * [libheif-rs](https://github.com/cykooz/libheif-rs) (wrapper for libheif-sys)

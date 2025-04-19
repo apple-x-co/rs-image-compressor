@@ -64,7 +64,6 @@ pub fn compress(
     //     println!("\tMime type: {}", image_format.to_mime_type());
     // }
 
-    // TODO: HEIC? HEIF? のファイルを検出できるようにする!!
     let mut buf_reader = BufReader::new(input_file);
     let image_type = match image_type::image_type(&mut buf_reader) {
         Some(image_type) => image_type,
@@ -265,9 +264,10 @@ pub fn compress(
             if verbose {
                 if let Some(heif_config) = config.heif.as_ref() {
                     println!("\n[Options]");
-                    println!("\tQuality: {}", heif_config.quality);
 
-                    // TODO:
+                    if let Some(quality) = heif_config.quality {
+                        println!("\tQuality: {}", quality);
+                    }
                 }
             }
 

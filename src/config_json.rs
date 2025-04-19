@@ -85,7 +85,7 @@ pub struct GifConfig {
 
 #[derive(Debug, Deserialize)]
 pub struct HeifConfig {
-    pub quality: u8,
+    pub quality: Option<u8>,
     pub size: Option<SizeConfig>,
 }
 
@@ -161,7 +161,7 @@ impl Default for GifConfig {
 impl Default for HeifConfig {
     fn default() -> Self {
         Self {
-            quality: 50,
+            quality: Some(50),
             size: None,
         }
     }

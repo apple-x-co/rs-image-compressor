@@ -30,7 +30,10 @@ pub fn compress(config: Option<&HeifConfig>, input_file: File) -> anyhow::Result
     }
 
     let mut encoder = lib_heif.encoder_for_format(CompressionFormat::Hevc)?;
-    encoder.set_quality(EncoderQuality::Lossy(quality))?;
+    
+    if let Some(quality) = quality {
+        encoder.set_quality(EncoderQuality::Lossy(quality))?;
+    }
 
     let mut encode_context = HeifContext::new()?;
     encode_context.encode_image(&image, &mut encoder, None)?;
