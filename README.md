@@ -101,8 +101,9 @@ rs-image-compressor --input <INPUT> --output <OUTPUT> --verbose
 * Gif
   * [gifski](https://github.com/ImageOptim/gifski)
 * **WIP:** SVG
-  * Looking for library ...
+  * 😩 Looking for library ...
 * HEIF,HEIC
   * [libheif-rs](https://github.com/cykooz/libheif-rs) (wrapper for libheif-sys)
 * **WIP:** PDF
   * [lopdf](https://github.com/J-F-Liu/lopdf)
+  * 😩 I need ghostscript bindings ...
