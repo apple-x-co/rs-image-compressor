@@ -6,8 +6,8 @@ mod heif_compressor;
 mod pdf_compressor;
 
 use crate::config_json::Config;
-use crate::file::file_type;
-use crate::file::file_type::FileType;
+use crate::file_type;
+use crate::file_type::FileType;
 use anyhow::{anyhow, Context, Result};
 use little_exif::exif_tag::ExifTag;
 use little_exif::filetype::FileExtension;
@@ -66,13 +66,13 @@ pub fn compress(
     // }
 
     let mut buf_reader = BufReader::new(input_file);
-    let image_type = match file_type::file_type(&mut buf_reader) {
+    let file_type = match file_type::detect(&mut buf_reader) {
         Some(image_type) => image_type,
         None => return Err(anyhow::anyhow!("Could not determine file format")),
     };
 
     // NOTE: Compress file
-    let compressed_data = match image_type {
+    let compressed_data = match file_type {
         FileType::PNG => {
             if verbose {
                 if let Some(png_config) = config.png.as_ref() {

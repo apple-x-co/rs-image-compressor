@@ -11,7 +11,7 @@ pub enum FileType {
     PDF,
 }
 
-pub fn file_type(buf_reader: &mut BufReader<File>) -> Option<FileType> {
+pub fn detect(buf_reader: &mut BufReader<File>) -> Option<FileType> {
     let mut buffer = [0; 24];
     buf_reader.read(&mut buffer).unwrap();
 

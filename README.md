@@ -89,7 +89,7 @@ rs-image-compressor --input <INPUT> --output <OUTPUT> --verbose
 
 👉 [See samples](https://github.com/apple-x-co/rs-image-compressor-benchmark)
 
-## Supported Images
+## Supported Files
 
 * PNG
   * [oxipng](https://github.com/shssoichiro/oxipng)
@@ -100,7 +100,7 @@ rs-image-compressor --input <INPUT> --output <OUTPUT> --verbose
   * [webp](https://github.com/jaredforth/webp)（wrapper for libwebp-sys）
 * Gif
   * [gifski](https://github.com/ImageOptim/gifski)
-* SVG
+* **WIP:** SVG
   * Looking for library ...
 * HEIF,HEIC
   * [libheif-rs](https://github.com/cykooz/libheif-rs) (wrapper for libheif-sys)

@@ -1,9 +1,9 @@
 mod compressor;
 mod config_json;
-mod file;
+mod file_type;
 
 use crate::config_json::Config;
-use anyhow::{Result, anyhow};
+use anyhow::{anyhow, Result};
 use clap::Parser;
 
 #[derive(Parser, Debug)]
