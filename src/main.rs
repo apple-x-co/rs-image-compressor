@@ -1,6 +1,6 @@
 mod compressor;
 mod config_json;
-mod image;
+mod file;
 
 use crate::config_json::Config;
 use anyhow::{Result, anyhow};

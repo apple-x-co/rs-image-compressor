@@ -2,36 +2,41 @@ use std::fs::File;
 use std::io::{BufReader, Read};
 
 #[derive(Debug, PartialEq, Clone)]
-pub enum ImageType {
+pub enum FileType {
     GIF,
     PNG,
     JPEG,
     WEBP,
     HEIF,
+    PDF,
 }
 
-pub fn image_type(buf_reader: &mut BufReader<File>) -> Option<ImageType> {
+pub fn file_type(buf_reader: &mut BufReader<File>) -> Option<FileType> {
     let mut buffer = [0; 24];
     buf_reader.read(&mut buffer).unwrap();
 
     if infer::image::is_gif(&buffer) {
-        return Some(ImageType::GIF);
+        return Some(FileType::GIF);
     }
 
     if infer::image::is_png(&buffer) {
-        return Some(ImageType::PNG);
+        return Some(FileType::PNG);
     }
 
     if infer::image::is_jpeg(&buffer) {
-        return Some(ImageType::JPEG);
+        return Some(FileType::JPEG);
     }
 
     if infer::image::is_webp(&buffer) {
-        return Some(ImageType::WEBP);
+        return Some(FileType::WEBP);
     }
 
     if infer::image::is_heif(&buffer) {
-        return Some(ImageType::HEIF);
+        return Some(FileType::HEIF);
+    }
+    
+    if infer::archive::is_pdf(&buffer) {
+        return Some(FileType::PDF);
     }
 
     None

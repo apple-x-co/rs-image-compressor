@@ -3,9 +3,11 @@ mod png_compressor;
 mod webp_compressor;
 mod gif_compressor;
 mod heif_compressor;
+mod pdf_compressor;
 
 use crate::config_json::Config;
-use crate::image::image_type;
+use crate::file::file_type;
+use crate::file::file_type::FileType;
 use anyhow::{anyhow, Context, Result};
 use little_exif::exif_tag::ExifTag;
 use little_exif::filetype::FileExtension;
@@ -14,7 +16,6 @@ use std::fs::File;
 use std::io::{BufReader, Read, Seek, Write};
 use std::path::Path;
 use std::time::Instant;
-use crate::image::image_type::ImageType;
 
 pub fn compress(
     config: Config,
@@ -65,14 +66,14 @@ pub fn compress(
     // }
 
     let mut buf_reader = BufReader::new(input_file);
-    let image_type = match image_type::image_type(&mut buf_reader) {
+    let image_type = match file_type::file_type(&mut buf_reader) {
         Some(image_type) => image_type,
-        None => return Err(anyhow::anyhow!("Could not determine image format")),
+        None => return Err(anyhow::anyhow!("Could not determine file format")),
     };
 
-    // NOTE: Compress image
+    // NOTE: Compress file
     let compressed_data = match image_type {
-        ImageType::PNG => {
+        FileType::PNG => {
             if verbose {
                 if let Some(png_config) = config.png.as_ref() {
                     println!("\n[Options]");
@@ -124,7 +125,7 @@ pub fn compress(
                 }
             }
         }
-        ImageType::JPEG => {
+        FileType::JPEG => {
             if verbose {
                 if let Some(jpeg_config) = config.jpeg.as_ref() {
                     println!("\n[Options]");
@@ -198,7 +199,7 @@ pub fn compress(
                 }
             }
         }
-        ImageType::WEBP => {
+        FileType::WEBP => {
             if verbose {
                 if let Some(webp_config) = config.webp.as_ref() {
                     println!("\n[Options]");
@@ -222,7 +223,7 @@ pub fn compress(
                 }
             }
         }
-        ImageType::GIF => {
+        FileType::GIF => {
             if verbose {
                 if let Some(gif_config) = config.gif.as_ref() {
                     println!("\n[Options]");
@@ -260,7 +261,7 @@ pub fn compress(
                 }
             }
         }
-        ImageType::HEIF => {
+        FileType::HEIF => {
             if verbose {
                 if let Some(heif_config) = config.heif.as_ref() {
                     println!("\n[Options]");
@@ -285,8 +286,23 @@ pub fn compress(
                 }
             }
         }
+        FileType::PDF => {
+            let mut input_file = File::open(input_path)
+                .with_context(|| format!("Failed to open input file: {}", input_path))?;
+            let result = pdf_compressor::compress(&mut input_file);
+            match result {
+                Ok(data) => data,
+                Err(e) => {
+                    return Err(anyhow!(
+                        "PDF compression failed for file: {}. Error: {}",
+                        input_path,
+                        e
+                    ));
+                }
+            }
+        }
         // _ => {
-        //     return Err(anyhow!("Not supported image format"));
+        //     return Err(anyhow!("Not supported file format"));
         // }
     };
 

@@ -1,6 +1,6 @@
 [package]
 name = "rs-image-compressor"
-version = "0.1.13"
+version = "0.1.14"
 edition = "2024"
 
 [dependencies]
@@ -19,6 +19,7 @@ gifski = "1.33.0"
 rgb = "0.8.50"
 libheif-rs = "2.2.0"
 infer = "0.19.0"
+lopdf = "0.36.0"
 
 [profile.release]
 opt-level = "s"       # サイズと速度のバランスを取る最適化
