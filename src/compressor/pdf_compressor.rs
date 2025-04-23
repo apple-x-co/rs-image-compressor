@@ -8,6 +8,8 @@ pub fn compress(input_file: &mut File) -> anyhow::Result<Vec<u8>> {
     buf_reader.read_to_end(&mut buffer)?;
 
     let mut doc = Document::load_mem(&buffer)?;
+    doc.prune_objects();
+    doc.delete_zero_length_streams();
     doc.compress();
 
     let out_buffer = Vec::new();
