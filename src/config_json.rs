@@ -90,12 +90,24 @@ pub struct HeifConfig {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct PdfPngConfig {
+    pub quality_min: u8,
+    pub quality_max: u8,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PdfConfig {
+    pub png: PdfPngConfig,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct Config {
     pub png: Option<PngConfig>,
     pub jpeg: Option<JpegConfig>,
     pub webp: Option<WebpConfig>,
     pub gif: Option<GifConfig>,
     pub heif: Option<HeifConfig>,
+    pub pdf: Option<PdfConfig>,
 }
 
 impl Default for PngConfig {
@@ -167,6 +179,17 @@ impl Default for HeifConfig {
     }
 }
 
+impl Default for PdfConfig {
+    fn default() -> Self {
+        Self {
+            png: PdfPngConfig {
+                quality_min: 65,
+                quality_max: 75,
+            },
+        }
+    }
+}
+
 impl Default for Config {
     fn default() -> Self {
         Self {
@@ -175,6 +198,7 @@ impl Default for Config {
             webp: Some(WebpConfig::default()),
             gif: Some(GifConfig::default()),
             heif: Some(HeifConfig::default()),
+            pdf: Some(PdfConfig::default()),
         }
     }
 }

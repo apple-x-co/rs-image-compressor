@@ -3,8 +3,9 @@ use image::{DynamicImage, ImageFormat};
 use lopdf::{Dictionary, Document, Object, Stream};
 use std::fs::File;
 use std::io::{BufReader, Cursor, Read, Write};
+use crate::config_json::PdfConfig;
 
-pub fn compress(input_file: &mut File) -> anyhow::Result<Vec<u8>> {
+pub fn compress(input_file: &mut File, config: Option<&PdfConfig>) -> anyhow::Result<Vec<u8>> {
     let mut buf_reader = BufReader::new(input_file);
     let mut buffer = Vec::new();
     buf_reader.read_to_end(&mut buffer)?;
@@ -24,7 +25,7 @@ pub fn compress(input_file: &mut File) -> anyhow::Result<Vec<u8>> {
     doc.trailer.remove(b"Info");
 
     // NOTE: 画像の圧縮
-    compress_images(&mut doc)?;
+    compress_images(&mut doc, config)?;
 
     let out_buffer = Vec::new();
     let mut cursor = Cursor::new(out_buffer);
@@ -33,7 +34,13 @@ pub fn compress(input_file: &mut File) -> anyhow::Result<Vec<u8>> {
     Ok(cursor.into_inner().to_vec())
 }
 
-fn compress_images(doc: &mut Document) -> anyhow::Result<()> {
+fn compress_images(doc: &mut Document, config: Option<&PdfConfig>) -> anyhow::Result<()> {
+    let default_config = PdfConfig::default();
+    let (png_min_quality, png_max_quality) = match config {
+        Some(config) => (config.png.quality_min, config.png.quality_max),
+        None => (default_config.png.quality_min, default_config.png.quality_max),
+    };
+    
     let mut objects = Vec::new();
 
     for (object_id, object) in doc.objects.iter() {
@@ -52,22 +59,26 @@ fn compress_images(doc: &mut Document) -> anyhow::Result<()> {
                             println!("{:?}, {:?}, {:?}, {:?}, {:?}", "JPEG", object_id, color_space, width, height);
 
                             // TODO: 圧縮
-                        } else if filter == b"FlateDecode" && color_space == b"DeviceRGB" {
-                            // NOTE: png
-                            println!("{:?}, {:?}, {:?}, {:?}, {:?}", "PNG", object_id, color_space, width, height);
-
+                        } else if filter == b"FlateDecode" && (color_space == b"DeviceRGB" || color_space == b"DeviceGray") {
                             let mut decoder = ZlibDecoder::new(&stream.content[..]);
                             let mut decoded_data = Vec::new();
                             decoder.read_to_end(&mut decoded_data)?;
 
-                            let bitmap = decoded_data.chunks_exact(3)
-                                .map(|chunk| imagequant::RGBA::new(chunk[0], chunk[1], chunk[2], 0))
-                                .collect::<Vec<imagequant::RGBA>>();
+                            let rgba_data = if color_space == b"DeviceRGB" {
+                                decoded_data.chunks_exact(3)
+                                    .map(|chunk| imagequant::RGBA::new(chunk[0], chunk[1], chunk[2], 255))
+                                    .collect::<Vec<_>>()
+                            } else {
+                                // DeviceGray: gray → RGB
+                                decoded_data.iter()
+                                    .map(|g| imagequant::RGBA::new(*g, *g, *g, 255))
+                                    .collect::<Vec<_>>()
+                            };
 
                             let mut attr = imagequant::new();
-                            attr.set_quality(60, 75)?;
+                            attr.set_quality(png_min_quality, png_max_quality)?;
 
-                            let mut liq_image = attr.new_image(&bitmap[..], width as usize, height as usize, 0.0)?;
+                            let mut liq_image = attr.new_image(&rgba_data[..], width as usize, height as usize, 0.0)?;
                             let mut res = attr.quantize(&mut liq_image)?;
                             let (palette, pixels) = res.remapped(&mut liq_image)?;
 

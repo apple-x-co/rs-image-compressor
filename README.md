@@ -87,6 +87,13 @@ rs-image-compressor --input <INPUT> --output <OUTPUT> --verbose
 |-------------------|---------|--------------|------|---------|-----------------------------|
 | quality           | Integer | 1 .. 100     | -    | -       | 100: High                   |
 
+`PDF`
+
+|                 | Type    | Range        | Enum | Default | Note                        |
+|-----------------|---------|--------------|------|---------|-----------------------------|
+| png.min_quality | Integer | 1 .. 100     | -    | -       | 100: High                   |
+| png.max_quality | Integer | 1 .. 100     | -    | -       | 100: High                   |
+
 👉 [See samples](https://github.com/apple-x-co/rs-image-compressor-benchmark)
 
 ## Supported Files

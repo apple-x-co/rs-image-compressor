@@ -99,8 +99,8 @@ pub fn compress(
 
                     if let Some(lossy) = png_config.lossy.as_ref() {
                         println!("\tLossy:");
-                        println!("\t\tQuality_min: {}", lossy.quality_min);
-                        println!("\t\tQuality_max: {}", lossy.quality_max);
+                        println!("\t\tQuality min: {}", lossy.quality_min);
+                        println!("\t\tQuality max: {}", lossy.quality_max);
                         if let Some(colors) = lossy.colors {
                             println!("\t\tColors: {}", colors);
                         }
@@ -287,9 +287,19 @@ pub fn compress(
             }
         }
         FileType::PDF => {
+            if verbose {
+                if let Some(pdf_config) = config.pdf.as_ref() {
+                    println!("\n[Options]");
+
+                    println!("\tPng:");
+                    println!("\t\tQuality Min: {}", pdf_config.png.quality_min);
+                    println!("\t\tQuality Max: {}", pdf_config.png.quality_max);
+                }
+            }
+
             let mut input_file = File::open(input_path)
                 .with_context(|| format!("Failed to open input file: {}", input_path))?;
-            let result = pdf_compressor::compress(&mut input_file);
+            let result = pdf_compressor::compress(&mut input_file, config.pdf.as_ref());
             match result {
                 Ok(data) => data,
                 Err(e) => {

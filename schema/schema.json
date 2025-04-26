@@ -433,6 +433,34 @@
       "required": [
         "quality"
       ]
+    },
+    "pdf": {
+      "type": "object",
+      "properties": {
+        "png": {
+          "properties": {
+            "quality_min": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100,
+              "default": 65
+            },
+            "quality_max": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100,
+              "default": 75
+            }
+          },
+          "required": [
+            "quality_min",
+            "quality_max"
+          ]
+        }
+      },
+      "required": [
+        "png"
+      ]
     }
   }
 }
