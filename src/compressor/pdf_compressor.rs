@@ -1,6 +1,8 @@
-use lopdf::Document;
+use flate2::read::ZlibDecoder;
+use image::{DynamicImage, ImageFormat};
+use lopdf::{Dictionary, Document, Object, Stream};
 use std::fs::File;
-use std::io::{BufReader, Cursor, Read};
+use std::io::{BufReader, Cursor, Read, Write};
 
 pub fn compress(input_file: &mut File) -> anyhow::Result<Vec<u8>> {
     let mut buf_reader = BufReader::new(input_file);
@@ -8,13 +10,109 @@ pub fn compress(input_file: &mut File) -> anyhow::Result<Vec<u8>> {
     buf_reader.read_to_end(&mut buffer)?;
 
     let mut doc = Document::load_mem(&buffer)?;
+
+    // NOTE: 未使用オブジェクトの削除
     doc.prune_objects();
+
+    // NOTE: 不必要なストリームの削除
     doc.delete_zero_length_streams();
+
+    // NOTE: ストリームをFlateで圧縮（非画像のテキスト系ストリームにも適用される）
     doc.compress();
+
+    // NOTE: Info（作成者など） 辞書を削除
+    doc.trailer.remove(b"Info");
+
+    // NOTE: 画像の圧縮
+    compress_images(&mut doc)?;
 
     let out_buffer = Vec::new();
     let mut cursor = Cursor::new(out_buffer);
     doc.save_to(&mut cursor)?;
 
     Ok(cursor.into_inner().to_vec())
+}
+
+fn compress_images(doc: &mut Document) -> anyhow::Result<()> {
+    let mut objects = Vec::new();
+
+    for (object_id, object) in doc.objects.iter() {
+        match object {
+            Object::Stream(stream) => {
+                let dict = &stream.dict;
+                if let Ok(subtype) = dict.get(b"Subtype") {
+                    if subtype == &Object::Name(b"Image".to_vec()) {
+                        let filter = dict.get(b"Filter").and_then(Object::as_name).unwrap_or(b"");
+                        let color_space = dict.get(b"ColorSpace").and_then(Object::as_name).unwrap_or(b"");
+                        let width = dict.get(b"Width").and_then(Object::as_i64).unwrap_or(0);
+                        let height = dict.get(b"Height").and_then(Object::as_i64).unwrap_or(0);
+
+                        if filter == b"DCTDecode" {
+                            // NOTE: Jpeg
+                            println!("{:?}, {:?}, {:?}, {:?}, {:?}", "JPEG", object_id, color_space, width, height);
+
+                            // TODO: 圧縮
+                        } else if filter == b"FlateDecode" && color_space == b"DeviceRGB" {
+                            // NOTE: png
+                            println!("{:?}, {:?}, {:?}, {:?}, {:?}", "PNG", object_id, color_space, width, height);
+
+                            let mut decoder = ZlibDecoder::new(&stream.content[..]);
+                            let mut decoded_data = Vec::new();
+                            decoder.read_to_end(&mut decoded_data)?;
+
+                            let bitmap = decoded_data.chunks_exact(3)
+                                .map(|chunk| imagequant::RGBA::new(chunk[0], chunk[1], chunk[2], 0))
+                                .collect::<Vec<imagequant::RGBA>>();
+
+                            let mut attr = imagequant::new();
+                            attr.set_quality(60, 75)?;
+
+                            let mut liq_image = attr.new_image(&bitmap[..], width as usize, height as usize, 0.0)?;
+                            let mut res = attr.quantize(&mut liq_image)?;
+                            let (palette, pixels) = res.remapped(&mut liq_image)?;
+
+                            let mut quantized_img = image::ImageBuffer::new(width as u32, height as u32);
+                            for (x, y, pixel) in quantized_img.enumerate_pixels_mut() {
+                                let idx = (y * width as u32 + x) as usize;
+                                let p = &palette[pixels[idx] as usize];
+                                *pixel = image::Rgba([p.r, p.g, p.b, p.a]);
+                            }
+
+                            let dynamic_image = DynamicImage::ImageRgba8(quantized_img);
+
+                            let mut new_data = Vec::new();
+                            dynamic_image.write_to(&mut Cursor::new(&mut new_data), ImageFormat::Png)?;
+
+                            let new_encoded = Vec::new();
+                            let mut encoder = flate2::write::ZlibEncoder::new(Vec::new(), flate2::Compression::best());
+                            encoder.write_all(&new_encoded)?;
+
+                            let new_stream = Stream::new(
+                                Dictionary::from_iter(vec![
+                                    (b"Type".to_vec(), Object::Name(b"XObject".to_vec())),
+                                    (b"Subtype".to_vec(), Object::Name(b"Image".to_vec())),
+                                    (b"Width".to_vec(), Object::Integer(width)),
+                                    (b"Height".to_vec(), Object::Integer(height)),
+                                    (b"Length".to_vec(), Object::Integer(new_encoded.len() as i64)),
+                                    (b"ColorSpace".to_vec(), Object::Name(b"DeviceRGB".to_vec())),
+                                    (b"BitsPerComponent".to_vec(), Object::Integer(8)),
+                                    (b"Filter".to_vec(), Object::Name(b"FlateDecode".to_vec())),
+                                ]),
+                                new_encoded,
+                            );
+
+                            objects.push((*object_id, Object::Stream(new_stream)));
+                        }
+                    }
+                }
+            },
+            _ => {},
+        }
+    }
+
+    for (object_id, object) in objects {
+        doc.objects.insert(object_id, object);
+    }
+
+    Ok(())
 }
