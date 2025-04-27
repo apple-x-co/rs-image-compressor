@@ -96,8 +96,15 @@ pub struct PdfPngConfig {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct PdfJpegConfig {
+    pub quality: u8,
+    pub max_length: i64,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct PdfConfig {
     pub png: PdfPngConfig,
+    pub jpeg: PdfJpegConfig,
 }
 
 #[derive(Debug, Deserialize)]
@@ -186,6 +193,10 @@ impl Default for PdfConfig {
                 quality_min: 65,
                 quality_max: 75,
             },
+            jpeg: PdfJpegConfig {
+                quality: 70,
+                max_length: 1500,
+            },       
         }
     }
 }

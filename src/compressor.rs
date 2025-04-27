@@ -294,6 +294,10 @@ pub fn compress(
                     println!("\tPng:");
                     println!("\t\tQuality Min: {}", pdf_config.png.quality_min);
                     println!("\t\tQuality Max: {}", pdf_config.png.quality_max);
+
+                    println!("\tJpeg:");
+                    println!("\t\tQuality: {}", pdf_config.jpeg.quality);
+                    println!("\t\tMax length: {}", pdf_config.jpeg.max_length);
                 }
             }
 

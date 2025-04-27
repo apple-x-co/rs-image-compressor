@@ -89,10 +89,12 @@ rs-image-compressor --input <INPUT> --output <OUTPUT> --verbose
 
 `PDF`
 
-|                 | Type    | Range        | Enum | Default | Note                        |
-|-----------------|---------|--------------|------|---------|-----------------------------|
-| png.min_quality | Integer | 1 .. 100     | -    | -       | 100: High                   |
-| png.max_quality | Integer | 1 .. 100     | -    | -       | 100: High                   |
+|                 | Type    | Range    | Enum | Default | Note      |
+|-----------------|---------|----------|------|---------|-----------|
+| png.min_quality | Integer | 1 .. 100 | -    | 65      | 100: High |
+| png.max_quality | Integer | 1 .. 100 | -    | 75      | 100: High |
+| jpeg.quality    | Integer | 1 .. 100 | -    | 70      | 100: High |
+| jpeg.max_length | Integer | -        | -    | 1500    |           |
 
 👉 [See samples](https://github.com/apple-x-co/rs-image-compressor-benchmark)
 
@@ -113,3 +115,5 @@ rs-image-compressor --input <INPUT> --output <OUTPUT> --verbose
   * [libheif-rs](https://github.com/cykooz/libheif-rs) (wrapper for libheif-sys)
 * PDF
   * [lopdf](https://github.com/J-F-Liu/lopdf)
+  * [mozjpeg](https://github.com/mozilla/mozjpeg)
+  * [pngquant](https://pngquant.org)
