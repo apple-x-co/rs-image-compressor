@@ -1,9 +1,10 @@
+use crate::config_json::PdfConfig;
+use anyhow::anyhow;
 use flate2::read::ZlibDecoder;
 use image::{DynamicImage, ImageFormat};
 use lopdf::{Dictionary, Document, Object, Stream};
 use std::fs::File;
 use std::io::{BufReader, Cursor, Read, Write};
-use crate::config_json::PdfConfig;
 
 pub fn compress(input_file: &mut File, config: Option<&PdfConfig>) -> anyhow::Result<Vec<u8>> {
     let mut buf_reader = BufReader::new(input_file);
@@ -40,7 +41,7 @@ fn compress_images(doc: &mut Document, config: Option<&PdfConfig>) -> anyhow::Re
         Some(config) => (config.png.quality_min, config.png.quality_max),
         None => (default_config.png.quality_min, default_config.png.quality_max),
     };
-    
+
     let mut objects = Vec::new();
 
     for (object_id, object) in doc.objects.iter() {
@@ -55,10 +56,50 @@ fn compress_images(doc: &mut Document, config: Option<&PdfConfig>) -> anyhow::Re
                         let height = dict.get(b"Height").and_then(Object::as_i64).unwrap_or(0);
 
                         if filter == b"DCTDecode" {
-                            // NOTE: Jpeg
-                            println!("{:?}, {:?}, {:?}, {:?}, {:?}", "JPEG", object_id, color_space, width, height);
+                            let decoded_img = image::load_from_memory(&stream.content)
+                                .map_err(|e| anyhow!("Failed to decode JPEG image: {}", e))?
+                                .to_rgb8();
 
-                            // TODO: 圧縮
+                            let rgb_data = decoded_img.as_raw();
+
+                            let color_space = mozjpeg::ColorSpace::JCS_RGB;
+                            let mut compress = mozjpeg::Compress::new(color_space);
+                            compress.set_quality(70.0);
+                            compress.set_size(width as usize, height as usize);
+                            compress.set_scan_optimization_mode(mozjpeg::ScanMode::AllComponentsTogether);
+                            compress.set_optimize_coding(true);
+                            compress.set_use_scans_in_trellis(false);
+                            compress.set_smoothing_factor(0);
+
+                            let mut started = compress
+                                .start_compress(Vec::new())
+                                .map_err(|e| anyhow!("Failed to start compress: {}", e))?;
+
+                            let scanline_result = started.write_scanlines(rgb_data);
+                            if scanline_result.is_err() {
+                                let err = format!("Failed to write scanline: {}", scanline_result.unwrap_err());
+                                return Err(anyhow!(err));
+                            }
+                            let data = started
+                                .finish()
+                                .map_err(|e| anyhow!("Failed to finish compress: {}", e))?;
+
+                            let new_stream = Stream::new(
+                                Dictionary::from_iter(vec![
+                                    (b"Type".to_vec(), Object::Name(b"XObject".to_vec())),
+                                    (b"Subtype".to_vec(), Object::Name(b"Image".to_vec())),
+                                    (b"Width".to_vec(), Object::Integer(width)),
+                                    (b"Height".to_vec(), Object::Integer(height)),
+                                    (b"Length".to_vec(), Object::Integer(data.len() as i64)),
+                                    (b"ColorSpace".to_vec(), Object::Name(b"DeviceRGB".to_vec())),
+                                    (b"BitsPerComponent".to_vec(), Object::Integer(8)),
+                                    (b"Filter".to_vec(), Object::Name(b"DCTDecode".to_vec())),
+                                ]),
+                                data,
+                            );
+
+                            objects.push((*object_id, Object::Stream(new_stream)));
+
                         } else if filter == b"FlateDecode" && (color_space == b"DeviceRGB" || color_space == b"DeviceGray") {
                             let mut decoder = ZlibDecoder::new(&stream.content[..]);
                             let mut decoded_data = Vec::new();
@@ -91,12 +132,12 @@ fn compress_images(doc: &mut Document, config: Option<&PdfConfig>) -> anyhow::Re
 
                             let dynamic_image = DynamicImage::ImageRgba8(quantized_img);
 
-                            let mut new_data = Vec::new();
-                            dynamic_image.write_to(&mut Cursor::new(&mut new_data), ImageFormat::Png)?;
+                            let mut data = Vec::new();
+                            dynamic_image.write_to(&mut Cursor::new(&mut data), ImageFormat::Png)?;
 
-                            let new_encoded = Vec::new();
-                            let mut encoder = flate2::write::ZlibEncoder::new(Vec::new(), flate2::Compression::best());
-                            encoder.write_all(&new_encoded)?;
+                            let mut encoder = flate2::write::ZlibEncoder::new(Vec::new(), flate2::Compression::default());
+                            encoder.write_all(&data)?;
+                            let compressed_data = encoder.finish()?;
 
                             let new_stream = Stream::new(
                                 Dictionary::from_iter(vec![
@@ -104,12 +145,12 @@ fn compress_images(doc: &mut Document, config: Option<&PdfConfig>) -> anyhow::Re
                                     (b"Subtype".to_vec(), Object::Name(b"Image".to_vec())),
                                     (b"Width".to_vec(), Object::Integer(width)),
                                     (b"Height".to_vec(), Object::Integer(height)),
-                                    (b"Length".to_vec(), Object::Integer(new_encoded.len() as i64)),
+                                    (b"Length".to_vec(), Object::Integer(compressed_data.len() as i64)),
                                     (b"ColorSpace".to_vec(), Object::Name(b"DeviceRGB".to_vec())),
                                     (b"BitsPerComponent".to_vec(), Object::Integer(8)),
                                     (b"Filter".to_vec(), Object::Name(b"FlateDecode".to_vec())),
                                 ]),
-                                new_encoded,
+                                compressed_data,
                             );
 
                             objects.push((*object_id, Object::Stream(new_stream)));

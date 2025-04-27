@@ -111,6 +111,5 @@ rs-image-compressor --input <INPUT> --output <OUTPUT> --verbose
   * 😩 Looking for library ...
 * HEIF,HEIC
   * [libheif-rs](https://github.com/cykooz/libheif-rs) (wrapper for libheif-sys)
-* **WIP:** PDF
+* PDF
   * [lopdf](https://github.com/J-F-Liu/lopdf)
-  * 😩 I need ghostscript bindings ...
