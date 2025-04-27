@@ -290,6 +290,9 @@ pub fn compress(
             if verbose {
                 if let Some(pdf_config) = config.pdf.as_ref() {
                     println!("\n[Options]");
+                    println!("\tRemove info: {}", pdf_config.remove_info);
+                    println!("\tRemove metadata: {}", pdf_config.remove_metadata);
+                    println!("\tRemove unuse fonts: {}", pdf_config.remove_unuse_fonts);
 
                     println!("\tPng:");
                     println!("\t\tQuality Min: {}", pdf_config.png.quality_min);
