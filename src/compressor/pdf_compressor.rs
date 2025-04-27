@@ -23,8 +23,27 @@ pub fn compress(input_file: &mut File, config: Option<&PdfConfig>) -> anyhow::Re
     // NOTE: ストリームをFlateで圧縮（非画像のテキスト系ストリームにも適用される）
     doc.compress();
 
-    // NOTE: Info（作成者など） 辞書を削除
-    doc.trailer.remove(b"Info");
+    // NOTE: Infoを削除してプロパティを空にする
+    if config.unwrap_or(&PdfConfig::default()).remove_info {
+        doc.trailer.remove(b"Info");
+    }
+
+    // NOTE: Metadataを削除してプロパティを空にする
+    if config.unwrap_or(&PdfConfig::default()).remove_metadata {
+        doc.trailer.remove(b"Metadata");
+
+        // NOTE: カタログ辞書（Root）から /Metadata を除去
+        if let Ok(&Object::Reference(root_id)) = doc.trailer.get(b"Root") {
+            if let Ok(Object::Dictionary(catalog)) = doc.get_object_mut(root_id) {
+                catalog.remove(b"Metadata");
+            }
+        }
+    }
+
+    // NOTE: 未使用フォントの削除
+    if config.unwrap_or(&PdfConfig::default()).remove_unuse_fonts {
+        remove_unused_fonts(&mut doc)?;
+    }
 
     // NOTE: 画像の圧縮
     compress_images(&mut doc, config)?;
@@ -34,6 +53,68 @@ pub fn compress(input_file: &mut File, config: Option<&PdfConfig>) -> anyhow::Re
     doc.save_to(&mut cursor)?;
 
     Ok(cursor.into_inner().to_vec())
+}
+
+fn remove_unused_fonts(doc: &mut Document) -> anyhow::Result<()> {
+    use std::collections::HashSet;
+    use lopdf::ObjectId;
+
+    let mut used_fonts = HashSet::new();
+    
+    // ページのリソースからフォント参照を収集
+    for (_page_num, &page_id) in doc.get_pages().iter() {
+        let (resources, _) = doc.get_page_resources(page_id)?;
+
+        // Fontエントリを取得
+        if let Some(resources) = resources {
+            if let Ok(fonts_obj) = resources.get(b"Font") {
+                match fonts_obj {
+                    Object::Dictionary(fonts) => {
+                        // 辞書から直接フォント参照を収集
+                        for (_, font_obj) in fonts.iter() {
+                            if let Object::Reference(ref_id) = font_obj {
+                                used_fonts.insert(*ref_id);
+                            }
+                        }
+                    }
+                    Object::Reference(fonts_ref) => {
+                        // 参照されている辞書からフォント参照を収集
+                        if let Ok(Object::Dictionary(fonts)) = doc.get_object(*fonts_ref) {
+                            for (_, font_obj) in fonts.iter() {
+                                if let Object::Reference(ref_id) = font_obj {
+                                    used_fonts.insert(*ref_id);
+                                }
+                            }
+                        }
+                    }
+                    _ => {} // フォント辞書でないオブジェクトは無視
+                }
+            }
+        }
+    }
+
+    // 未使用フォントを特定
+    let font_ids: Vec<ObjectId> = doc.objects
+        .iter()
+        .filter_map(|(id, obj)| {
+            if let Object::Dictionary(dict) = obj {
+                // Type属性がFontで、使用中フォント集合に含まれていないものを抽出
+                if let Ok(Object::Name(name)) = dict.get(b"Type") {
+                    if name == b"Font" && !used_fonts.contains(id) {
+                        return Some(*id);
+                    }
+                }
+            }
+            None
+        })
+        .collect();
+
+    // 未使用フォントを削除
+    for font_id in font_ids {
+        doc.objects.remove(&font_id);
+    }
+
+    Ok(())
 }
 
 fn compress_images(doc: &mut Document, config: Option<&PdfConfig>) -> anyhow::Result<()> {

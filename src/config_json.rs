@@ -103,6 +103,9 @@ pub struct PdfJpegConfig {
 
 #[derive(Debug, Deserialize)]
 pub struct PdfConfig {
+    pub remove_info: bool,
+    pub remove_metadata: bool,
+    pub remove_unuse_fonts: bool,
     pub png: PdfPngConfig,
     pub jpeg: PdfJpegConfig,
 }
@@ -189,6 +192,9 @@ impl Default for HeifConfig {
 impl Default for PdfConfig {
     fn default() -> Self {
         Self {
+            remove_info: true,
+            remove_metadata: true,
+            remove_unuse_fonts: true,
             png: PdfPngConfig {
                 quality_min: 65,
                 quality_max: 75,
@@ -196,7 +202,7 @@ impl Default for PdfConfig {
             jpeg: PdfJpegConfig {
                 quality: 70,
                 max_length: 1500,
-            },       
+            },
         }
     }
 }

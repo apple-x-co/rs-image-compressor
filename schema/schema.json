@@ -437,6 +437,18 @@
     "pdf": {
       "type": "object",
       "properties": {
+        "remove_info": {
+          "type": "boolean",
+          "default": true
+        },
+        "remove_metadata": {
+          "type": "boolean",
+          "default": true
+        },
+        "remove_unuse_fonts": {
+          "type": "boolean",
+          "default": false
+        },
         "png": {
           "properties": {
             "quality_min": {
@@ -478,6 +490,9 @@
         }
       },
       "required": [
+        "remove_info",
+        "remove_metadata",
+        "remove_unuse_fonts",
         "png",
         "jpeg"
       ]
