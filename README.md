@@ -16,7 +16,8 @@ rs-image-compressor --input <INPUT> --output <OUTPUT> --verbose
 
 ## Config
 
-* [JSON Schema](https://raw.githubusercontent.com/apple-x-co/rs-image-compressor/refs/heads/main/schema/schema.json)
+👉 [JSON Schema](https://raw.githubusercontent.com/apple-x-co/rs-image-compressor/refs/heads/main/schema/schema.json)  
+👉 [See samples](https://github.com/apple-x-co/rs-image-compressor-benchmark)
 
 `PNG`
 
@@ -89,14 +90,15 @@ rs-image-compressor --input <INPUT> --output <OUTPUT> --verbose
 
 `PDF`
 
-|                 | Type    | Range    | Enum | Default | Note      |
-|-----------------|---------|----------|------|---------|-----------|
-| png.min_quality | Integer | 1 .. 100 | -    | 65      | 100: High |
-| png.max_quality | Integer | 1 .. 100 | -    | 75      | 100: High |
-| jpeg.quality    | Integer | 1 .. 100 | -    | 70      | 100: High |
-| jpeg.max_length | Integer | -        | -    | 1500    |           |
-
-👉 [See samples](https://github.com/apple-x-co/rs-image-compressor-benchmark)
+|                    | Type    | Range    | Enum | Default | Note      |
+|--------------------|---------|----------|------|---------|-----------|
+| remove_info        | Bool    | -        | -    | true    | -         |
+| remove_metadata    | Bool    | -        | -    | true    | -         |
+| remove_unuse_fonts | Bool    | -        | -    | true    | -         |
+| png.min_quality    | Integer | 1 .. 100 | -    | 65      | 100: High |
+| png.max_quality    | Integer | 1 .. 100 | -    | 75      | 100: High |
+| jpeg.quality       | Integer | 1 .. 100 | -    | 70      | 100: High |
+| jpeg.max_length    | Integer | -        | -    | 1500    |           |
 
 ## Supported Files
 
