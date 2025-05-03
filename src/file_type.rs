@@ -9,6 +9,7 @@ pub enum FileType {
     WEBP,
     HEIF,
     PDF,
+    XML,
 }
 
 pub fn detect(buf_reader: &mut BufReader<File>) -> Option<FileType> {
@@ -37,6 +38,10 @@ pub fn detect(buf_reader: &mut BufReader<File>) -> Option<FileType> {
     
     if infer::archive::is_pdf(&buffer) {
         return Some(FileType::PDF);
+    }
+
+    if infer::text::is_xml(&buffer) {
+        return Some(FileType::XML);
     }
 
     None

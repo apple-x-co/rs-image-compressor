@@ -1,11 +1,12 @@
 use crate::config_json::PdfConfig;
 use anyhow::anyhow;
-use flate2::read::ZlibDecoder;
 use image::imageops::FilterType;
-use image::{DynamicImage, ImageFormat};
+use image::{DynamicImage, ImageFormat, RgbImage};
 use lopdf::{Dictionary, Document, Object, Stream};
 use std::fs::File;
 use std::io::{BufReader, Cursor, Read, Write};
+
+const CMYK_ICC: &'static [u8] = include_bytes!("../../assets/icc/USWebCoatedSWOP.icc");
 
 pub fn compress(input_file: &mut File, config: Option<&PdfConfig>) -> anyhow::Result<Vec<u8>> {
     let mut buf_reader = BufReader::new(input_file);
@@ -56,11 +57,11 @@ pub fn compress(input_file: &mut File, config: Option<&PdfConfig>) -> anyhow::Re
 }
 
 fn remove_unused_fonts(doc: &mut Document) -> anyhow::Result<()> {
-    use std::collections::HashSet;
     use lopdf::ObjectId;
+    use std::collections::HashSet;
 
     let mut used_fonts = HashSet::new();
-    
+
     // ページのリソースからフォント参照を収集
     for (_page_num, &page_id) in doc.get_pages().iter() {
         let (resources, _) = doc.get_page_resources(page_id)?;
@@ -94,7 +95,8 @@ fn remove_unused_fonts(doc: &mut Document) -> anyhow::Result<()> {
     }
 
     // 未使用フォントを特定
-    let font_ids: Vec<ObjectId> = doc.objects
+    let font_ids: Vec<ObjectId> = doc
+        .objects
         .iter()
         .filter_map(|(id, obj)| {
             if let Object::Dictionary(dict) = obj {
@@ -151,9 +153,97 @@ fn compress_images(doc: &mut Document, config: Option<&PdfConfig>) -> anyhow::Re
                         let mut height = dict.get(b"Height").and_then(Object::as_i64).unwrap_or(0);
 
                         if filter == b"DCTDecode" {
-                            let decoded_img = image::load_from_memory(&stream.content)
-                                .map_err(|e| anyhow!("Failed to decode JPEG image: {}", e))?
-                                .to_rgb8();
+                            // @see https://github.com/siiptuo/pio/blob/f1bde34b284d6022041d48cff9cc8f1944ba278c/src/jpeg.rs#L144
+                            let dinfo =
+                                mozjpeg::Decompress::with_markers(&[mozjpeg::Marker::APP(2)])
+                                    .from_mem(&stream.content)
+                                    .map_err(|err| err.to_string())
+                                    .unwrap();
+
+                            let decoded_img = match dinfo.image() {
+                                Ok(mozjpeg::decompress::Format::RGB(mut decompress)) => {
+                                    let decompress_data: Vec<[u8; 3]> = decompress.read_scanlines()?;
+                                    decompress.finish()?;
+
+                                    let mut rgb_data = Vec::with_capacity(decompress_data.len() * 3);
+                                    for pixel in decompress_data {
+                                        rgb_data.extend_from_slice(&[pixel[0], pixel[1], pixel[2]]);
+                                    }
+
+                                    let dynamic_image = DynamicImage::ImageRgb8(RgbImage::from_raw(width as u32, height as u32, rgb_data).unwrap());
+                                    let mut jpeg_data = Vec::new();
+                                    dynamic_image.write_to(&mut Cursor::new(&mut jpeg_data), image::ImageFormat::Jpeg)?;
+                                    image::load_from_memory(&jpeg_data)
+                                        .map_err(|e| { anyhow!("Failed to decode JPEG (RGB) image: {}", e) })?
+                                        .to_rgb8()
+                                }
+                                Ok(mozjpeg::decompress::Format::Gray(mut decompress)) => {
+                                    let decompress_data: Vec<[u8; 1]> = decompress.read_scanlines()?;
+                                    decompress.finish()?;
+
+                                    let gray_profile = lcms2::Profile::new_gray(
+                                        &lcms2::CIExyY::default(),
+                                        &lcms2::ToneCurve::new(2.2),
+                                    )?;
+                                    let rgb_profile = lcms2::Profile::new_srgb();
+
+                                    let transform = lcms2::Transform::new(
+                                        &gray_profile,
+                                        lcms2::PixelFormat::GRAY_8,
+                                        &rgb_profile,
+                                        lcms2::PixelFormat::RGB_8,
+                                        lcms2::Intent::Perceptual,
+                                    )?;
+
+                                    let mut transformed_data = vec![rgb::RGB8::new(0, 0, 0); decompress_data.len()];
+                                    transform.transform_pixels(&decompress_data, &mut transformed_data);
+
+                                    let mut rgb_data = Vec::with_capacity(transformed_data.len() * 3);
+                                    for pixel in transformed_data {
+                                        rgb_data.extend_from_slice(&[pixel.r, pixel.g, pixel.b]);
+                                    }
+
+                                    let dynamic_image = DynamicImage::ImageRgb8(RgbImage::from_raw(width as u32, height as u32, rgb_data).unwrap());
+                                    let mut jpeg_data = Vec::new();
+                                    dynamic_image.write_to(&mut Cursor::new(&mut jpeg_data), image::ImageFormat::Jpeg)?;
+                                    image::load_from_memory(&jpeg_data)
+                                        .map_err(|e| { anyhow!("Failed to decode JPEG (Gray) image: {}", e) })?
+                                        .to_rgb8()
+                                }
+                                Ok(mozjpeg::decompress::Format::CMYK(mut decompress)) => {
+                                    let decompress_data: Vec<[u8; 4]> = decompress.read_scanlines()?;
+                                    decompress.finish()?;
+
+                                    let cmyk_profile = lcms2::Profile::new_icc(CMYK_ICC)?;
+                                    let rgb_profile = lcms2::Profile::new_srgb();
+
+                                    let transform = lcms2::Transform::new(
+                                        &cmyk_profile,
+                                        lcms2::PixelFormat::CMYK_8,
+                                        &rgb_profile,
+                                        lcms2::PixelFormat::RGB_8,
+                                        lcms2::Intent::Perceptual,
+                                    )?;
+
+                                    let mut transformed_data = vec![rgb::RGB8::new(0, 0, 0); decompress_data.len()];
+                                    transform.transform_pixels(&decompress_data, &mut transformed_data);
+
+                                    let mut rgb_data = Vec::with_capacity(transformed_data.len() * 3);
+                                    for pixel in transformed_data {
+                                        rgb_data.extend_from_slice(&[pixel.r, pixel.g, pixel.b]);
+                                    }
+
+                                    let dynamic_image = DynamicImage::ImageRgb8(RgbImage::from_raw(width as u32, height as u32, rgb_data).unwrap());
+                                    let mut jpeg_data = Vec::new();
+                                    dynamic_image.write_to(&mut Cursor::new(&mut jpeg_data), image::ImageFormat::Jpeg)?;
+                                    image::load_from_memory(&jpeg_data)
+                                        .map_err(|e| { anyhow!("Failed to decode JPEG (CMYK) image: {}", e) })?
+                                        .to_rgb8()
+                                }
+                                Err(err) => {
+                                    return Err(anyhow!("Failed to decode JPEG image: {}", err));
+                                }
+                            };
 
                             let resized_img = if width > jpeg_max_length || height > jpeg_max_length
                             {
@@ -172,8 +262,7 @@ fn compress_images(doc: &mut Document, config: Option<&PdfConfig>) -> anyhow::Re
 
                             let rgb_data = resized_img.as_raw();
 
-                            let color_space = mozjpeg::ColorSpace::JCS_RGB;
-                            let mut compress = mozjpeg::Compress::new(color_space);
+                            let mut compress = mozjpeg::Compress::new(mozjpeg::ColorSpace::JCS_RGB);
                             compress.set_quality(jpeg_quality as f32);
                             compress.set_size(width as usize, height as usize);
                             compress.set_scan_optimization_mode(
@@ -218,7 +307,7 @@ fn compress_images(doc: &mut Document, config: Option<&PdfConfig>) -> anyhow::Re
                         } else if filter == b"FlateDecode"
                             && (color_space == b"DeviceRGB" || color_space == b"DeviceGray")
                         {
-                            let mut decoder = ZlibDecoder::new(&stream.content[..]);
+                            let mut decoder = flate2::read::ZlibDecoder::new(&stream.content[..]);
                             let mut decoded_data = Vec::new();
                             decoder.read_to_end(&mut decoded_data)?;
 

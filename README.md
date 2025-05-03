@@ -106,16 +106,16 @@ rs-image-compressor --input <INPUT> --output <OUTPUT> --verbose
   * [oxipng](https://github.com/shssoichiro/oxipng)
   * [pngquant](https://pngquant.org)
 * JPEG
-  * [mozjpeg](https://github.com/mozilla/mozjpeg)
+  * [mozjpeg](https://github.com/mozilla/mozjpeg) ※ Only RGB
 * WebP
   * [webp](https://github.com/jaredforth/webp)（wrapper for libwebp-sys）
 * Gif
   * [gifski](https://github.com/ImageOptim/gifski)
-* **WIP:** SVG
-  * 😩 Looking for library ...
+* SVG
+  * [usvg](https://github.com/linebender/resvg)
 * HEIF,HEIC
   * [libheif-rs](https://github.com/cykooz/libheif-rs) (wrapper for libheif-sys)
 * PDF
   * [lopdf](https://github.com/J-F-Liu/lopdf)
-  * [mozjpeg](https://github.com/mozilla/mozjpeg)
+  * [mozjpeg](https://github.com/mozilla/mozjpeg) ※ Only RGB
   * [pngquant](https://pngquant.org)

@@ -194,7 +194,7 @@ impl Default for PdfConfig {
         Self {
             remove_info: true,
             remove_metadata: true,
-            remove_unuse_fonts: true,
+            remove_unuse_fonts: false,
             png: PdfPngConfig {
                 quality_min: 65,
                 quality_max: 75,

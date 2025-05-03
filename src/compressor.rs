@@ -4,6 +4,7 @@ mod webp_compressor;
 mod gif_compressor;
 mod heif_compressor;
 mod pdf_compressor;
+mod svg_compressor;
 
 use crate::config_json::Config;
 use crate::file_type;
@@ -312,6 +313,21 @@ pub fn compress(
                 Err(e) => {
                     return Err(anyhow!(
                         "PDF compression failed for file: {}. Error: {}",
+                        input_path,
+                        e
+                    ));
+                }
+            }
+        }
+        FileType::XML => {
+            let mut input_file = File::open(input_path)
+                .with_context(|| format!("Failed to open input file: {}", input_path))?;
+            let result = svg_compressor::compress(&mut input_file);
+            match result {
+                Ok(data) => data,
+                Err(e) => {
+                    return Err(anyhow!(
+                        "SVG compression failed for file: {}. Error: {}",
                         input_path,
                         e
                     ));
