@@ -117,5 +117,5 @@ rs-image-compressor --input <INPUT> --output <OUTPUT> --verbose
   * [libheif-rs](https://github.com/cykooz/libheif-rs) (wrapper for libheif-sys)
 * PDF
   * [lopdf](https://github.com/J-F-Liu/lopdf)
-  * [mozjpeg](https://github.com/mozilla/mozjpeg) ※ Only RGB
+  * [mozjpeg](https://github.com/mozilla/mozjpeg)
   * [pngquant](https://pngquant.org)

@@ -1,16 +1,31 @@
+use anyhow::Context;
 use std::fs::File;
+use std::io;
+use std::io::Read;
+use usvg::{Indent, WriteOptions};
 
 pub fn compress(input_file: &mut File) -> anyhow::Result<Vec<u8>> {
-    // let options = usvg::Options {
-    //     ..Default::default()       // デフォルト設定
-    // };
-    //
-    // // SVGを解析してツリーを作成
-    // let tree = usvg::Tree::from_data(&input, &options).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
-    //
-    // // 最適化されたSVGを出力する
-    // let mut output_file = File::create(output_path)?;
-    // tree.write_to(&mut output_file, &options)?;
+    let options = usvg::Options {
+        ..Default::default()
+    };
 
-    Err(anyhow::anyhow!("Not implemented"))
+    let mut buffer = Vec::new();
+    input_file
+        .read_to_end(&mut buffer)
+        .context("Failed to read input file")?;
+
+    let tree = usvg::Tree::from_data(&buffer, &options)
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+
+    let xml = tree.to_string(&WriteOptions{
+        id_prefix: None,
+        preserve_text: false,
+        coordinates_precision: 0,
+        transforms_precision: 0,
+        use_single_quote: false,
+        indent: Indent::None,
+        attributes_indent: Indent::None,
+    });
+
+    Ok(xml.into_bytes())
 }
