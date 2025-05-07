@@ -7,6 +7,7 @@ mod pdf_compressor;
 mod svg_compressor;
 
 use crate::config_json::Config;
+use crate::error::CompressorError;
 use crate::file_type;
 use crate::file_type::FileType;
 use anyhow::{anyhow, Context, Result};
@@ -36,41 +37,23 @@ pub fn compress(
         .to_string_lossy()
         .into_owned();
 
-    if verbose {
-        println!("===== Start =====");
-        println!("\n[Input]");
-        println!("\tFile name: {}", input_file_name);
-    }
-
     let input_file = File::open(input_path)
-        .with_context(|| format!("Failed to open input file: {}", input_path))?;
-
-    if verbose {
-        let metadata = File::open(input_path)?.metadata()?;
-        println!("\tSize: {} bytes", metadata.len());
-    }
-
-    // let reader = BufReader::new(input_file);
-    // let image_reader = ImageReader::new(reader)
-    //     .with_guessed_format()
-    //     .context("Failed to guess image format")?;
-    //
-    // let image_format = match image_reader.format() {
-    //     Some(format) => format,
-    //     None => return Err(anyhow::anyhow!("Could not determine image format")),
-    // };
-    //
-    // if verbose {
-    //     let (width, height) = image_reader.into_dimensions()?; // NOTE: HEIC など 不明なファイルを取得できないのでこれも独自実装する必要がある
-    //     println!("\tResolution: {}x{}", width, height);
-    //     println!("\tMime type: {}", image_format.to_mime_type());
-    // }
+        .map_err(|e| anyhow!(CompressorError::IoError(e)))?;
 
     let mut buf_reader = BufReader::new(input_file);
     let file_type = match file_type::detect(&mut buf_reader) {
         Some(image_type) => image_type,
-        None => return Err(anyhow::anyhow!("Could not determine file format")),
+        None => return Err(anyhow!(CompressorError::UnknownFileFormat)),
     };
+
+    if verbose {
+        println!("===== Start =====");
+        println!("\n[Input]");
+        println!("\tFile name: {}", input_file_name);
+
+        let metadata = File::open(input_path)?.metadata()?;
+        println!("\tSize: {} bytes", metadata.len());
+    }
 
     // NOTE: Compress file
     let compressed_data = match file_type {

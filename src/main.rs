@@ -1,8 +1,10 @@
 mod compressor;
 mod config_json;
+mod error;
 mod file_type;
 
 use crate::config_json::Config;
+use crate::error::CompressorError;
 use anyhow::{anyhow, Result};
 use clap::Parser;
 
@@ -30,7 +32,7 @@ fn main() -> Result<()> {
     } else {
         match config_json::parse(args.config.unwrap().as_str()) {
             Ok(config) => config,
-            Err(e) => return Err(anyhow!("{}", e)),
+            Err(e) => return Err(anyhow!(CompressorError::Other(e.to_string()))),
         }
     };
 

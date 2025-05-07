@@ -1,3 +1,5 @@
+use crate::error::CompressorError;
+use anyhow::anyhow;
 use serde::Deserialize;
 use serde_json::Value;
 use std::fs::read_to_string;
@@ -220,17 +222,17 @@ impl Default for Config {
     }
 }
 
-pub fn parse(json_path: &str) -> Result<Config, &'static str> {
-    let json_string = read_to_string(json_path).unwrap();
-    let json: Value = serde_json::from_str(&json_string).unwrap();
-    let schema = serde_json::from_slice(JSON_SCHEMA_BYTES).unwrap();
-    let validator = jsonschema::validator_for(&schema).unwrap();
+pub fn parse(json_path: &str) -> Result<Config, anyhow::Error> {
+    let json_string = read_to_string(json_path)?;
+    let json: Value = serde_json::from_str(&json_string)?;
+    let schema = serde_json::from_slice(JSON_SCHEMA_BYTES)?;
+    let validator = jsonschema::validator_for(&schema)?;
 
     if !validator.validate(&json).is_ok() {
-        return Err("Validation failed".into());
+        return Err(anyhow!(CompressorError::JsonUnformatError("Validation failed".to_string())));
     }
 
-    let config: Config = serde_json::from_str(&json_string).unwrap();
+    let config: Config = serde_json::from_str(&json_string)?;
 
     Ok(config)
 }

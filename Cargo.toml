@@ -23,6 +23,7 @@ lopdf = "0.36.0"
 flate2 = "1.1.1"
 usvg = "0.45.1"
 lcms2 = "6.1.0"
+thiserror = "2.0.12"
 
 [profile.release]
 opt-level = "s"       # サイズと速度のバランスを取る最適化
