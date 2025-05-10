@@ -96,7 +96,7 @@ pub fn compress(
             }
 
             let mut input_file = File::open(input_path)
-                .with_context(|| format!("Failed to open input file: {}", input_path))?;
+                .map_err(|e| anyhow!(CompressorError::IoError(e)))?;
             let result = png_compressor::compress(config.png.as_ref(), &mut input_file);
             match result {
                 Ok(data) => data,
@@ -132,7 +132,7 @@ pub fn compress(
             }
 
             let mut input_file = File::open(input_path)
-                .with_context(|| format!("Failed to open input file: {}", input_path))?;
+                .map_err(|e| anyhow!(CompressorError::IoError(e)))?;
 
             let mut buffer = [0; 50];
             input_file.read_exact(&mut buffer)?;
@@ -194,7 +194,7 @@ pub fn compress(
             }
 
             let mut input_file = File::open(input_path)
-                .with_context(|| format!("Failed to open input file: {}", input_path))?;
+                .map_err(|e| anyhow!(CompressorError::IoError(e)))?;
             let result = webp_compressor::compress(config.webp.as_ref(), &mut input_file);
             match result {
                 Ok(data) => data,
@@ -232,7 +232,7 @@ pub fn compress(
             }
 
             let mut input_file = File::open(input_path)
-                .with_context(|| format!("Failed to open input file: {}", input_path))?;
+                .map_err(|e| anyhow!(CompressorError::IoError(e)))?;
             let result = gif_compressor::compress(config.gif.as_ref(), &mut input_file);
             match result {
                 Ok(data) => data,
@@ -257,7 +257,7 @@ pub fn compress(
             }
 
             let input_file = File::open(input_path)
-                .with_context(|| format!("Failed to open input file: {}", input_path))?;
+                .map_err(|e| anyhow!(CompressorError::IoError(e)))?;
             let result = heif_compressor::compress(config.heif.as_ref(), input_file);
             match result {
                 Ok(data) => data,
@@ -289,7 +289,7 @@ pub fn compress(
             }
 
             let mut input_file = File::open(input_path)
-                .with_context(|| format!("Failed to open input file: {}", input_path))?;
+                .map_err(|e| anyhow!(CompressorError::IoError(e)))?;
             let result = pdf_compressor::compress(&mut input_file, config.pdf.as_ref());
             match result {
                 Ok(data) => data,
@@ -304,7 +304,7 @@ pub fn compress(
         }
         FileType::XML => {
             let mut input_file = File::open(input_path)
-                .with_context(|| format!("Failed to open input file: {}", input_path))?;
+                .map_err(|e| anyhow!(CompressorError::IoError(e)))?;
             let result = svg_compressor::compress(&mut input_file);
             match result {
                 Ok(data) => data,
@@ -323,10 +323,10 @@ pub fn compress(
     };
 
     let mut output_file = File::create(output_path)
-        .with_context(|| format!("Failed to create output file: {}", output_path))?;
+        .map_err(|e| anyhow!(CompressorError::IoError(e)))?;
     output_file
         .write_all(&compressed_data)
-        .with_context(|| format!("Failed to write to output file: {}", output_path))?;
+        .map_err(|e| anyhow!(CompressorError::IoError(e)))?;
 
     if verbose {
         let metadata = File::open(input_path)?.metadata()?;
