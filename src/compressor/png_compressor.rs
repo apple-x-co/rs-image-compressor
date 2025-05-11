@@ -1,5 +1,6 @@
 use crate::config_json::PngConfig;
-use anyhow::{anyhow, Context};
+use crate::error::CompressorError::{ImageDecodeError, PngOptimizeError};
+use anyhow::anyhow;
 use image::imageops::FilterType;
 use image::{DynamicImage, GenericImageView, ImageFormat, ImageReader};
 use std::fs::File;
@@ -35,7 +36,7 @@ pub fn compress(config: Option<&PngConfig>, input_file: &mut File) -> anyhow::Re
     let reader = BufReader::new(input_file);
     let image_reader = ImageReader::new(reader)
         .with_guessed_format()
-        .context("Failed to guess image format")?;
+        .map_err(|e| anyhow!(ImageDecodeError(e.into())))?;
 
     let mut dynamic_image = image_reader.decode()?;
 
@@ -113,38 +114,6 @@ pub fn compress(config: Option<&PngConfig>, input_file: &mut File) -> anyhow::Re
     let png_result = oxipng::optimize_from_memory(&bytes, &options);
     match png_result {
         Ok(data) => Ok(data),
-        Err(e) => match e {
-            oxipng::PngError::DeflatedDataTooLong(size) => {
-                Err(anyhow!("Deflated data too long: {}", size))
-            }
-            oxipng::PngError::TimedOut => Err(anyhow!("PNG optimization timed out")),
-            oxipng::PngError::NotPNG => Err(anyhow!(
-                "Invalid PNG header: Not a PNG file or file is corrupted"
-            )),
-            oxipng::PngError::APNGNotSupported => Err(anyhow!("APNG format is not supported")),
-            oxipng::PngError::APNGOutOfOrder => Err(anyhow!("APNG chunks are out of order")),
-            oxipng::PngError::InvalidData => Err(anyhow!("Invalid PNG data")),
-            oxipng::PngError::TruncatedData => Err(anyhow!("Truncated PNG data")),
-            oxipng::PngError::ChunkMissing(chunk_type) => {
-                Err(anyhow!("Missing PNG chunk: {}", chunk_type))
-            }
-            oxipng::PngError::InvalidDepthForType(bit_depth, color_type) => Err(anyhow!(
-                "Invalid bit depth for color type: bit_depth={:?}, color_type={:?}",
-                bit_depth,
-                color_type
-            )),
-            oxipng::PngError::IncorrectDataLength(expected, actual) => Err(anyhow!(
-                "Incorrect data length: expected={}, actual={}",
-                expected,
-                actual
-            )),
-            oxipng::PngError::C2PAMetadataPreventsChanges => {
-                Err(anyhow!("C2PA metadata prevents changes"))
-            }
-            oxipng::PngError::Other(message) => {
-                Err(anyhow!("PNG optimization failed: {}", message))
-            }
-            _ => Err(anyhow!("PNG optimization failed: {:?}", e)),
-        },
+        Err(e) => Err(anyhow!(PngOptimizeError(e.to_string()))),
     }
 }

@@ -1,5 +1,6 @@
 use crate::config_json::JpegConfig;
-use anyhow::{anyhow, Context};
+use crate::error::CompressorError::{ImageDecodeError, JpegCompressError};
+use anyhow::anyhow;
 use image::imageops::FilterType;
 use image::{GenericImageView, ImageReader};
 use little_exif::exif_tag::ExifTag;
@@ -45,7 +46,7 @@ pub fn compress(
     let reader = BufReader::new(input_file);
     let image_reader = ImageReader::new(reader)
         .with_guessed_format()
-        .context("Failed to guess image format")?;
+        .map_err(|e| anyhow!(ImageDecodeError(e.into())))?;
 
     let mut dynamic_image = image_reader.decode()?;
 
@@ -113,16 +114,15 @@ pub fn compress(
 
     let mut started = compress
         .start_compress(Vec::new())
-        .map_err(|e| anyhow!("Failed to start compress: {}", e))?;
+        .map_err(|e| anyhow!(JpegCompressError(e.to_string())))?;
 
     let scanline_result = started.write_scanlines(&bytes);
     if scanline_result.is_err() {
-        let err = format!("Failed to write scanline: {}", scanline_result.unwrap_err());
-        return Err(anyhow!(err));
+        return Err(anyhow!(JpegCompressError(format!("Failed to write scanline: {}", scanline_result.unwrap_err()))));
     }
     let writer = started
         .finish()
-        .map_err(|e| anyhow!("Failed to finish compress: {}", e))?;
+        .map_err(|e| anyhow!(JpegCompressError(e.to_string())))?;
 
     Ok(writer)
 }

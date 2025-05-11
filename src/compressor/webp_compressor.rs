@@ -5,6 +5,7 @@ use std::ffi::c_int;
 use std::fs::File;
 use std::io::BufReader;
 use image::imageops::FilterType;
+use crate::error::CompressorError::{ImageDecodeError, WebpCompressError};
 
 pub fn compress(config: Option<&WebpConfig>, input_file: &mut File) -> anyhow::Result<Vec<u8>> {
     let default_config = WebpConfig::default();
@@ -52,7 +53,7 @@ pub fn compress(config: Option<&WebpConfig>, input_file: &mut File) -> anyhow::R
     let reader = BufReader::new(input_file);
     let image_reader = ImageReader::new(reader)
         .with_guessed_format()
-        .context("Failed to guess image format")?;
+        .map_err(|e| anyhow!(ImageDecodeError(e.into())))?;
 
     let mut dynamic_image = image_reader.decode()?;
 
@@ -68,7 +69,7 @@ pub fn compress(config: Option<&WebpConfig>, input_file: &mut File) -> anyhow::R
     }
 
     let encoder = webp::Encoder::from_image(&dynamic_image)
-        .map_err(|e| anyhow!("Failed to encode: {}", e))?;
+        .map_err(|e| anyhow!(WebpCompressError(e.into())))?;
 
     let mut webp_config = webp::WebPConfig::new().unwrap();
     webp_config.quality = quality as f32;
@@ -112,6 +113,6 @@ pub fn compress(config: Option<&WebpConfig>, input_file: &mut File) -> anyhow::R
     let webp_data = encoder.encode_advanced(&webp_config);
     match webp_data {
         Ok(webp_data) => Ok(webp_data.to_vec()),
-        Err(e) => Err(anyhow!("Failed to encode: {:?}", e)),
+        Err(e) => Err(anyhow!(WebpCompressError(format!("Failed to encode: {:?}", e)))),
     }
 }

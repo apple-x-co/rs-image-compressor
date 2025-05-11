@@ -1,7 +1,8 @@
 use crate::config_json::GifConfig;
-use anyhow::{anyhow, Context, Result};
+use crate::error::CompressorError::{GifCompressError, ImageDecodeError};
+use anyhow::{Context, Result, anyhow};
 use gifski::collector::ImgVec;
-use gifski::{progress::NoProgress, Repeat, Settings};
+use gifski::{Repeat, Settings, progress::NoProgress};
 use image::codecs::gif::GifDecoder;
 use image::imageops::FilterType;
 use image::{AnimationDecoder, DynamicImage, RgbaImage};
@@ -33,18 +34,20 @@ pub fn compress(config: Option<&GifConfig>, input_file: &mut File) -> Result<Vec
     let mut buffer = Vec::new();
     input_file
         .read_to_end(&mut buffer)
-        .context("Failed to read input file")?;
+        .map_err(|e| anyhow!(ImageDecodeError(e.into())))?;
 
     // GIFファイルを解析
     let reader = Cursor::new(&buffer);
-    let decoder = GifDecoder::new(reader).context("Failed to create GIF decoder")?;
+    let decoder = GifDecoder::new(reader).map_err(|e| anyhow!(ImageDecodeError(e.into())))?;
     let frames = decoder
         .into_frames()
         .collect_frames()
-        .context("Failed to collect frames")?;
+        .map_err(|e| anyhow!(ImageDecodeError(e.into())))?;
 
     if frames.is_empty() {
-        return Err(anyhow!("No frames found in GIF file"));
+        return Err(anyhow!(GifCompressError(
+            "No frames found in GIF file".to_string()
+        )));
     }
 
     if frames.len() > 1000 {
@@ -81,7 +84,7 @@ pub fn compress(config: Option<&GifConfig>, input_file: &mut File) -> Result<Vec
 
     // gifskiのコレクタを作成
     let (collector, writer_handle) =
-        gifski::new(settings).context("Failed to initialize gifski")?;
+        gifski::new(settings).map_err(|e| anyhow!(GifCompressError(e.to_string())))?;
 
     // 別スレッドでライターを開始
     let writer_thread = std::thread::spawn(move || {
@@ -178,12 +181,10 @@ pub fn compress(config: Option<&GifConfig>, input_file: &mut File) -> Result<Vec
                 drop(collector);
                 let _ = writer_thread.join();
 
-                return Err(anyhow!(
+                return Err(anyhow!(format!(
                     "Failed to add frame {} (delay: {}s): {:?}",
-                    i,
-                    frame_delay,
-                    e
-                ));
+                    i, frame_delay, e
+                )));
             }
 
             // 累積時間を更新
@@ -199,12 +200,12 @@ pub fn compress(config: Option<&GifConfig>, input_file: &mut File) -> Result<Vec
         Ok((writer_result, buffer)) => {
             // ライターの結果をチェック
             if let Err(e) = writer_result {
-                return Err(anyhow!("Gifski writer error: {:?}", e));
+                return Err(anyhow!(GifCompressError(format!("Gifski writer error: {:?}", e))));
             }
             // バッファを返す
             Ok(buffer)
         }
-        Err(_) => Err(anyhow!("Gifski writer thread panicked")),
+        Err(_) => Err(anyhow!(GifCompressError("Gifski writer thread panicked".to_string()))),
     }
 }
 
