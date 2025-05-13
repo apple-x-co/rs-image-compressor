@@ -1,4 +1,5 @@
 use crate::config_json::HeifConfig;
+use crate::error::CompressorError;
 use anyhow::anyhow;
 use libheif_rs::{
     ColorSpace, CompressionFormat, EncoderQuality, HeifContext, LibHeif, RgbChroma, StreamReader,
@@ -40,7 +41,7 @@ pub fn compress(config: Option<&HeifConfig>, input_file: File) -> anyhow::Result
 
     let bytes = encode_context
         .write_to_bytes()
-        .map_err(|e| anyhow!("Failed to write to bytes: {}", e))?;
+        .map_err(|e| anyhow!(CompressorError::HeifCompressError(e.to_string())))?;
 
     Ok(bytes)
 }

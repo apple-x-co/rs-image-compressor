@@ -5,8 +5,8 @@ pub enum CompressorError {
     #[error("I/Oエラー: {0}")]
     IoError(#[from] std::io::Error),
 
-    #[error("画像フォーマットエラー: {0}")]
-    ImageFormatError(String),
+    // #[error("画像フォーマットエラー: {0}")]
+    // ImageFormatError(String),
 
     #[error("画像デコードエラー: {0}")]
     ImageDecodeError(#[from] image::ImageError),
@@ -40,9 +40,6 @@ pub enum CompressorError {
 
     #[error("JSON形式エラー: {0}")]
     JsonUnformatError(String),
-    
-    #[error("その他のエラー: {0}")]
-    Other(String),
 }
 
-pub type Result<T> = std::result::Result<T, CompressorError>;
+// pub type Result<T> = std::result::Result<T, CompressorError>;

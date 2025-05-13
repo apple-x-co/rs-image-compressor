@@ -1,8 +1,8 @@
 use crate::config_json::GifConfig;
-use crate::error::CompressorError::{GifCompressError, ImageDecodeError};
-use anyhow::{Context, Result, anyhow};
+use crate::error::CompressorError;
+use anyhow::{anyhow, Result};
 use gifski::collector::ImgVec;
-use gifski::{Repeat, Settings, progress::NoProgress};
+use gifski::{progress::NoProgress, Repeat, Settings};
 use image::codecs::gif::GifDecoder;
 use image::imageops::FilterType;
 use image::{AnimationDecoder, DynamicImage, RgbaImage};
@@ -34,18 +34,18 @@ pub fn compress(config: Option<&GifConfig>, input_file: &mut File) -> Result<Vec
     let mut buffer = Vec::new();
     input_file
         .read_to_end(&mut buffer)
-        .map_err(|e| anyhow!(ImageDecodeError(e.into())))?;
+        .map_err(|e| anyhow!(CompressorError::ImageDecodeError(e.into())))?;
 
     // GIFファイルを解析
     let reader = Cursor::new(&buffer);
-    let decoder = GifDecoder::new(reader).map_err(|e| anyhow!(ImageDecodeError(e.into())))?;
+    let decoder = GifDecoder::new(reader).map_err(|e| anyhow!(CompressorError::ImageDecodeError(e.into())))?;
     let frames = decoder
         .into_frames()
         .collect_frames()
-        .map_err(|e| anyhow!(ImageDecodeError(e.into())))?;
+        .map_err(|e| anyhow!(CompressorError::ImageDecodeError(e.into())))?;
 
     if frames.is_empty() {
-        return Err(anyhow!(GifCompressError(
+        return Err(anyhow!(CompressorError::GifCompressError(
             "No frames found in GIF file".to_string()
         )));
     }
@@ -84,7 +84,7 @@ pub fn compress(config: Option<&GifConfig>, input_file: &mut File) -> Result<Vec
 
     // gifskiのコレクタを作成
     let (collector, writer_handle) =
-        gifski::new(settings).map_err(|e| anyhow!(GifCompressError(e.to_string())))?;
+        gifski::new(settings).map_err(|e| anyhow!(CompressorError::GifCompressError(e.to_string())))?;
 
     // 別スレッドでライターを開始
     let writer_thread = std::thread::spawn(move || {
@@ -200,12 +200,12 @@ pub fn compress(config: Option<&GifConfig>, input_file: &mut File) -> Result<Vec
         Ok((writer_result, buffer)) => {
             // ライターの結果をチェック
             if let Err(e) = writer_result {
-                return Err(anyhow!(GifCompressError(format!("Gifski writer error: {:?}", e))));
+                return Err(anyhow!(CompressorError::GifCompressError(format!("Gifski writer error: {:?}", e))));
             }
             // バッファを返す
             Ok(buffer)
         }
-        Err(_) => Err(anyhow!(GifCompressError("Gifski writer thread panicked".to_string()))),
+        Err(_) => Err(anyhow!(CompressorError::GifCompressError("Gifski writer thread panicked".to_string()))),
     }
 }
 

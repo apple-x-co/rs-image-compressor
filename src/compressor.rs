@@ -10,7 +10,7 @@ use crate::config_json::Config;
 use crate::error::CompressorError;
 use crate::file_type;
 use crate::file_type::FileType;
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Result};
 use little_exif::exif_tag::ExifTag;
 use little_exif::filetype::FileExtension;
 use little_exif::metadata::Metadata;
@@ -317,9 +317,6 @@ pub fn compress(
                 }
             }
         }
-        // _ => {
-        //     return Err(anyhow!("Not supported file format"));
-        // }
     };
 
     let mut output_file = File::create(output_path)

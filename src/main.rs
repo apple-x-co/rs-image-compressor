@@ -32,7 +32,7 @@ fn main() -> Result<()> {
     } else {
         match config_json::parse(args.config.unwrap().as_str()) {
             Ok(config) => config,
-            Err(e) => return Err(anyhow!(CompressorError::Other(e.to_string()))),
+            Err(e) => return Err(anyhow!(CompressorError::ConfigError(e.to_string()))),
         }
     };
 

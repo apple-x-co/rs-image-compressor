@@ -1,4 +1,5 @@
 use crate::config_json::PdfConfig;
+use crate::error::CompressorError;
 use anyhow::anyhow;
 use image::imageops::FilterType;
 use image::{DynamicImage, ImageFormat, RgbImage};
@@ -157,8 +158,7 @@ fn compress_images(doc: &mut Document, config: Option<&PdfConfig>) -> anyhow::Re
                             let dinfo =
                                 mozjpeg::Decompress::with_markers(&[mozjpeg::Marker::APP(2)])
                                     .from_mem(&stream.content)
-                                    .map_err(|err| err.to_string())
-                                    .unwrap();
+                                    .map_err(|e| anyhow!(CompressorError::PdfCompressError(e.to_string())))?;
 
                             let decoded_img = match dinfo.image() {
                                 Ok(mozjpeg::decompress::Format::RGB(mut decompress)) => {
@@ -174,7 +174,7 @@ fn compress_images(doc: &mut Document, config: Option<&PdfConfig>) -> anyhow::Re
                                     let mut jpeg_data = Vec::new();
                                     dynamic_image.write_to(&mut Cursor::new(&mut jpeg_data), image::ImageFormat::Jpeg)?;
                                     image::load_from_memory(&jpeg_data)
-                                        .map_err(|e| { anyhow!("Failed to decode JPEG (RGB) image: {}", e) })?
+                                        .map_err(|e| { anyhow!(CompressorError::ImageDecodeError(e)) })?
                                         .to_rgb8()
                                 }
                                 Ok(mozjpeg::decompress::Format::Gray(mut decompress)) => {
@@ -207,7 +207,7 @@ fn compress_images(doc: &mut Document, config: Option<&PdfConfig>) -> anyhow::Re
                                     let mut jpeg_data = Vec::new();
                                     dynamic_image.write_to(&mut Cursor::new(&mut jpeg_data), image::ImageFormat::Jpeg)?;
                                     image::load_from_memory(&jpeg_data)
-                                        .map_err(|e| { anyhow!("Failed to decode JPEG (Gray) image: {}", e) })?
+                                        .map_err(|e| { anyhow!(CompressorError::ImageDecodeError(e)) })?
                                         .to_rgb8()
                                 }
                                 Ok(mozjpeg::decompress::Format::CMYK(mut decompress)) => {
@@ -237,7 +237,7 @@ fn compress_images(doc: &mut Document, config: Option<&PdfConfig>) -> anyhow::Re
                                     let mut jpeg_data = Vec::new();
                                     dynamic_image.write_to(&mut Cursor::new(&mut jpeg_data), image::ImageFormat::Jpeg)?;
                                     image::load_from_memory(&jpeg_data)
-                                        .map_err(|e| { anyhow!("Failed to decode JPEG (CMYK) image: {}", e) })?
+                                        .map_err(|e| { anyhow!(CompressorError::ImageDecodeError(e)) })?
                                         .to_rgb8()
                                 }
                                 Err(err) => {
@@ -274,7 +274,7 @@ fn compress_images(doc: &mut Document, config: Option<&PdfConfig>) -> anyhow::Re
 
                             let mut started = compress
                                 .start_compress(Vec::new())
-                                .map_err(|e| anyhow!("Failed to start compress: {}", e))?;
+                                .map_err(|e| anyhow!(CompressorError::PdfCompressError(e.to_string())))?;
 
                             let scanline_result = started.write_scanlines(rgb_data);
                             if scanline_result.is_err() {
@@ -286,7 +286,7 @@ fn compress_images(doc: &mut Document, config: Option<&PdfConfig>) -> anyhow::Re
                             }
                             let data = started
                                 .finish()
-                                .map_err(|e| anyhow!("Failed to finish compress: {}", e))?;
+                                .map_err(|e| anyhow!(CompressorError::PdfCompressError(e.to_string())))?;
 
                             let new_stream = Stream::new(
                                 Dictionary::from_iter(vec![

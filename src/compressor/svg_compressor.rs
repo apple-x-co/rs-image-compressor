@@ -1,6 +1,7 @@
-use anyhow::Context;
+use crate::error::CompressorError;
+use crate::error::CompressorError::IoError;
+use anyhow::anyhow;
 use std::fs::File;
-use std::io;
 use std::io::Read;
 use usvg::{Indent, WriteOptions};
 
@@ -12,10 +13,10 @@ pub fn compress(input_file: &mut File) -> anyhow::Result<Vec<u8>> {
     let mut buffer = Vec::new();
     input_file
         .read_to_end(&mut buffer)
-        .context("Failed to read input file")?;
+        .map_err(|e| anyhow!(IoError(e)))?;
 
     let tree = usvg::Tree::from_data(&buffer, &options)
-        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+        .map_err(|e| anyhow!(CompressorError::SvgCompressError(e.to_string())))?;
 
     let xml = tree.to_string(&WriteOptions{
         id_prefix: None,

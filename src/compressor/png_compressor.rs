@@ -1,5 +1,5 @@
 use crate::config_json::PngConfig;
-use crate::error::CompressorError::{ImageDecodeError, PngOptimizeError};
+use crate::error::CompressorError;
 use anyhow::anyhow;
 use image::imageops::FilterType;
 use image::{DynamicImage, GenericImageView, ImageFormat, ImageReader};
@@ -36,7 +36,7 @@ pub fn compress(config: Option<&PngConfig>, input_file: &mut File) -> anyhow::Re
     let reader = BufReader::new(input_file);
     let image_reader = ImageReader::new(reader)
         .with_guessed_format()
-        .map_err(|e| anyhow!(ImageDecodeError(e.into())))?;
+        .map_err(|e| anyhow!(CompressorError::ImageDecodeError(e.into())))?;
 
     let mut dynamic_image = image_reader.decode()?;
 
@@ -114,6 +114,6 @@ pub fn compress(config: Option<&PngConfig>, input_file: &mut File) -> anyhow::Re
     let png_result = oxipng::optimize_from_memory(&bytes, &options);
     match png_result {
         Ok(data) => Ok(data),
-        Err(e) => Err(anyhow!(PngOptimizeError(e.to_string()))),
+        Err(e) => Err(anyhow!(CompressorError::PngOptimizeError(e.to_string()))),
     }
 }
