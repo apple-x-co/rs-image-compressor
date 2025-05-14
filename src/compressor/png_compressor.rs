@@ -1,7 +1,7 @@
 use crate::config_json::PngConfig;
 use crate::error::CompressorError;
+use crate::imaging::transform;
 use anyhow::anyhow;
-use image::imageops::FilterType;
 use image::{DynamicImage, GenericImageView, ImageFormat, ImageReader};
 use std::fs::File;
 use std::io::{BufReader, Cursor};
@@ -40,15 +40,8 @@ pub fn compress(config: Option<&PngConfig>, input_file: &mut File) -> anyhow::Re
 
     let mut dynamic_image = image_reader.decode()?;
 
-    if let Some(size) = size {
-        dynamic_image = match size.filter.as_str() {
-            "nearest" => dynamic_image.resize(size.width, size.height, FilterType::Nearest),
-            "triangle" => dynamic_image.resize(size.width, size.height, FilterType::Triangle),
-            "catmull_rom" => dynamic_image.resize(size.width, size.height, FilterType::CatmullRom),
-            "gaussian" => dynamic_image.resize(size.width, size.height, FilterType::Gaussian),
-            "lanczos3" => dynamic_image.resize(size.width, size.height, FilterType::Lanczos3),
-            _ => dynamic_image,
-        }
+    if let Some(size_config) = size {
+        dynamic_image = transform::resize_image(&dynamic_image, size_config);
     }
 
     let (width, height) = dynamic_image.dimensions();

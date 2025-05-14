@@ -1,10 +1,10 @@
 use crate::config_json::GifConfig;
 use crate::error::CompressorError;
+use crate::imaging::transform;
 use anyhow::{anyhow, Result};
 use gifski::collector::ImgVec;
 use gifski::{progress::NoProgress, Repeat, Settings};
 use image::codecs::gif::GifDecoder;
-use image::imageops::FilterType;
 use image::{AnimationDecoder, DynamicImage, RgbaImage};
 use rgb::RGBA8;
 use std::fs::File;
@@ -114,34 +114,7 @@ pub fn compress(config: Option<&GifConfig>, input_file: &mut File) -> Result<Vec
 
             // リサイズが必要な場合
             if let Some(size_config) = size {
-                dynamic_image = match size_config.filter.as_str() {
-                    "nearest" => dynamic_image.resize(
-                        size_config.width,
-                        size_config.height,
-                        FilterType::Nearest,
-                    ),
-                    "triangle" => dynamic_image.resize(
-                        size_config.width,
-                        size_config.height,
-                        FilterType::Triangle,
-                    ),
-                    "catmull_rom" => dynamic_image.resize(
-                        size_config.width,
-                        size_config.height,
-                        FilterType::CatmullRom,
-                    ),
-                    "gaussian" => dynamic_image.resize(
-                        size_config.width,
-                        size_config.height,
-                        FilterType::Gaussian,
-                    ),
-                    "lanczos3" => dynamic_image.resize(
-                        size_config.width,
-                        size_config.height,
-                        FilterType::Lanczos3,
-                    ),
-                    _ => dynamic_image,
-                };
+                dynamic_image = transform::resize_image(&dynamic_image, size_config);
             }
 
             // RGBA画像を取得

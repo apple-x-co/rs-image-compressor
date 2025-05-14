@@ -2,6 +2,8 @@ mod compressor;
 mod config_json;
 mod error;
 mod file_type;
+mod imaging;
+mod io;
 
 use crate::config_json::Config;
 use crate::error::CompressorError;
