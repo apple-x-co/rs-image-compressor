@@ -1,14 +1,14 @@
 use crate::config_json::GifConfig;
 use crate::error::CompressorError;
 use crate::imaging::transform;
+use crate::io::file::read_file_bytes;
 use anyhow::{anyhow, Result};
 use gifski::collector::ImgVec;
 use gifski::{progress::NoProgress, Repeat, Settings};
 use image::codecs::gif::GifDecoder;
 use image::{AnimationDecoder, DynamicImage, RgbaImage};
 use rgb::RGBA8;
-use std::fs::File;
-use std::io::{BufWriter, Cursor, Read};
+use std::io::{BufWriter, Cursor};
 
 pub fn compress(config: Option<&GifConfig>, input_path: &String) -> Result<Vec<u8>> {
     // 設定値の取得
@@ -30,14 +30,8 @@ pub fn compress(config: Option<&GifConfig>, input_path: &String) -> Result<Vec<u
         ),
     };
 
-    let mut input_file = File::open(input_path)
-        .map_err(|e| anyhow!(CompressorError::IoError(e)))?;
-
     // ファイルの内容を読み込み
-    let mut buffer = Vec::new();
-    input_file
-        .read_to_end(&mut buffer)
-        .map_err(|e| anyhow!(CompressorError::ImageDecodeError(e.into())))?;
+    let buffer = read_file_bytes(input_path)?;
 
     // GIFファイルを解析
     let reader = Cursor::new(&buffer);

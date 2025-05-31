@@ -1,21 +1,16 @@
 use crate::config_json::PdfConfig;
 use crate::error::CompressorError;
+use crate::io::file::read_file_bytes;
 use anyhow::anyhow;
 use image::imageops::FilterType;
 use image::{DynamicImage, ImageFormat, RgbImage};
 use lopdf::{Dictionary, Document, Object, Stream};
-use std::fs::File;
-use std::io::{BufReader, Cursor, Read, Write};
+use std::io::{Cursor, Read, Write};
 
 const CMYK_ICC: &'static [u8] = include_bytes!("../../assets/icc/USWebCoatedSWOP.icc");
 
 pub fn compress(input_path: &String, config: Option<&PdfConfig>) -> anyhow::Result<Vec<u8>> {
-    let input_file = File::open(input_path)
-        .map_err(|e| anyhow!(CompressorError::IoError(e)))?;
-
-    let mut buf_reader = BufReader::new(input_file);
-    let mut buffer = Vec::new();
-    buf_reader.read_to_end(&mut buffer)?;
+    let buffer = read_file_bytes(input_path)?;
 
     let mut doc = Document::load_mem(&buffer)?;
 
