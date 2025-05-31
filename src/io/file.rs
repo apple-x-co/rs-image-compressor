@@ -1,18 +1,30 @@
-use crate::error;
+use crate::error::{CompressorError, Result};
+use crate::file_type::FileType;
 use image::DynamicImage;
 use image::ImageReader;
 use std::fs::File;
 use std::io::BufReader;
 
-pub fn read_image_from_file(file_path: &str) -> error::Result<DynamicImage> {
+pub fn read_image_from_file(file_path: &str) -> Result<DynamicImage> {
     let file = File::open(file_path)
-        .map_err(|e| error::CompressorError::IoError(e))?;
+        .map_err(|e| CompressorError::IoError(e))?;
 
     let reader = BufReader::new(file);
     let image_reader = ImageReader::new(reader)
         .with_guessed_format()
-        .map_err(|e| error::CompressorError::ImageFormatError(e.to_string()))?;
+        .map_err(|e| CompressorError::ImageFormatError(e.to_string()))?;
 
     image_reader.decode()
-        .map_err(|e| error::CompressorError::ImageDecodeError(e))
+        .map_err(|e| CompressorError::ImageDecodeError(e))
+}
+
+pub fn detect_file_type(file_path: &str) -> Result<FileType> {
+    let file = File::open(file_path)
+        .map_err(|e| CompressorError::IoError(e))?;
+
+    let mut buf_reader = BufReader::new(file);
+    let file_type = crate::file_type::detect(&mut buf_reader)
+        .ok_or(CompressorError::UnknownFileFormat)?;
+
+    Ok(file_type)
 }

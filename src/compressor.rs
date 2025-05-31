@@ -8,14 +8,14 @@ mod svg_compressor;
 
 use crate::config_json::Config;
 use crate::error::CompressorError;
-use crate::file_type;
 use crate::file_type::FileType;
+use crate::io::file::detect_file_type;
 use anyhow::{anyhow, Result};
 use little_exif::exif_tag::ExifTag;
 use little_exif::filetype::FileExtension;
 use little_exif::metadata::Metadata;
 use std::fs::File;
-use std::io::{BufReader, Read, Seek, Write};
+use std::io::{Read, Seek, Write};
 use std::path::Path;
 use std::time::Instant;
 
@@ -37,14 +37,7 @@ pub fn compress(
         .to_string_lossy()
         .into_owned();
 
-    let input_file = File::open(input_path)
-        .map_err(|e| anyhow!(CompressorError::IoError(e)))?;
-
-    let mut buf_reader = BufReader::new(input_file);
-    let file_type = match file_type::detect(&mut buf_reader) {
-        Some(image_type) => image_type,
-        None => return Err(anyhow!(CompressorError::UnknownFileFormat)),
-    };
+    let file_type = detect_file_type(input_path)?;
 
     if verbose {
         println!("===== Start =====");
