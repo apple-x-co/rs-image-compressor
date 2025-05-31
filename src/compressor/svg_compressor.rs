@@ -1,19 +1,21 @@
 use crate::error::CompressorError;
-use crate::error::CompressorError::IoError;
 use anyhow::anyhow;
 use std::fs::File;
 use std::io::Read;
 use usvg::{Indent, WriteOptions};
 
-pub fn compress(input_file: &mut File) -> anyhow::Result<Vec<u8>> {
+pub fn compress(input_path: &String) -> anyhow::Result<Vec<u8>> {
     let options = usvg::Options {
         ..Default::default()
     };
 
+    let mut input_file = File::open(input_path)
+        .map_err(|e| anyhow!(CompressorError::IoError(e)))?;
+
     let mut buffer = Vec::new();
     input_file
         .read_to_end(&mut buffer)
-        .map_err(|e| anyhow!(IoError(e)))?;
+        .map_err(|e| anyhow!(CompressorError::IoError(e)))?;
 
     let tree = usvg::Tree::from_data(&buffer, &options)
         .map_err(|e| anyhow!(CompressorError::SvgCompressError(e.to_string())))?;

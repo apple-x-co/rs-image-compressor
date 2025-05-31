@@ -1,16 +1,15 @@
 use crate::config_json::JpegConfig;
 use crate::error::CompressorError;
 use crate::imaging::transform;
+use crate::io::file::read_image_from_file;
 use anyhow::anyhow;
-use image::{GenericImageView, ImageReader};
+use image::GenericImageView;
 use little_exif::exif_tag::ExifTag;
 use little_exif::metadata::Metadata;
-use std::fs::File;
-use std::io::BufReader;
 
 pub fn compress(
     config: Option<&JpegConfig>,
-    input_file: &mut File,
+    input_path: &String,
     metadata: &Metadata,
 ) -> anyhow::Result<Vec<u8>> {
     let default_config = JpegConfig::default();
@@ -43,12 +42,7 @@ pub fn compress(
         ),
     };
 
-    let reader = BufReader::new(input_file);
-    let image_reader = ImageReader::new(reader)
-        .with_guessed_format()
-        .map_err(|e| anyhow!(CompressorError::ImageDecodeError(e.into())))?;
-
-    let mut dynamic_image = image_reader.decode()?;
+    let mut dynamic_image = read_image_from_file(input_path)?;
 
     if let Some(jpeg_config) = config {
         match jpeg_config.exif.as_str() {

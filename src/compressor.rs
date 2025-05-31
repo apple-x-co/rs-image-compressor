@@ -55,7 +55,7 @@ pub fn compress(
         println!("\tSize: {} bytes", metadata.len());
     }
 
-    // NOTE: Compress file
+    // NOTE: Compress a file
     let compressed_data = match file_type {
         FileType::PNG => {
             if verbose {
@@ -95,9 +95,7 @@ pub fn compress(
                 }
             }
 
-            let mut input_file = File::open(input_path)
-                .map_err(|e| anyhow!(CompressorError::IoError(e)))?;
-            let result = png_compressor::compress(config.png.as_ref(), &mut input_file);
+            let result = png_compressor::compress(config.png.as_ref(), input_path);
             match result {
                 Ok(data) => data,
                 Err(e) => {
@@ -149,7 +147,7 @@ pub fn compress(
             };
 
             let result =
-                jpeg_compressor::compress(config.jpeg.as_ref(), &mut input_file, &metadata);
+                jpeg_compressor::compress(config.jpeg.as_ref(), input_path, &metadata);
             match result {
                 Ok(mut data) => {
                     if let Some(jpeg_config) = config.jpeg {
@@ -193,9 +191,7 @@ pub fn compress(
                 }
             }
 
-            let mut input_file = File::open(input_path)
-                .map_err(|e| anyhow!(CompressorError::IoError(e)))?;
-            let result = webp_compressor::compress(config.webp.as_ref(), &mut input_file);
+            let result = webp_compressor::compress(config.webp.as_ref(), input_path);
             match result {
                 Ok(data) => data,
                 Err(e) => {
@@ -231,9 +227,7 @@ pub fn compress(
                 }
             }
 
-            let mut input_file = File::open(input_path)
-                .map_err(|e| anyhow!(CompressorError::IoError(e)))?;
-            let result = gif_compressor::compress(config.gif.as_ref(), &mut input_file);
+            let result = gif_compressor::compress(config.gif.as_ref(), input_path);
             match result {
                 Ok(data) => data,
                 Err(e) => {
@@ -256,9 +250,7 @@ pub fn compress(
                 }
             }
 
-            let input_file = File::open(input_path)
-                .map_err(|e| anyhow!(CompressorError::IoError(e)))?;
-            let result = heif_compressor::compress(config.heif.as_ref(), input_file);
+            let result = heif_compressor::compress(config.heif.as_ref(), input_path);
             match result {
                 Ok(data) => data,
                 Err(e) => {
@@ -288,9 +280,7 @@ pub fn compress(
                 }
             }
 
-            let mut input_file = File::open(input_path)
-                .map_err(|e| anyhow!(CompressorError::IoError(e)))?;
-            let result = pdf_compressor::compress(&mut input_file, config.pdf.as_ref());
+            let result = pdf_compressor::compress(input_path, config.pdf.as_ref());
             match result {
                 Ok(data) => data,
                 Err(e) => {
@@ -303,9 +293,7 @@ pub fn compress(
             }
         }
         FileType::XML => {
-            let mut input_file = File::open(input_path)
-                .map_err(|e| anyhow!(CompressorError::IoError(e)))?;
-            let result = svg_compressor::compress(&mut input_file);
+            let result = svg_compressor::compress(input_path);
             match result {
                 Ok(data) => data,
                 Err(e) => {

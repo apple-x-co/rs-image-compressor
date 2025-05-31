@@ -1,13 +1,13 @@
 use crate::config_json::PngConfig;
 use crate::error::CompressorError;
 use crate::imaging::transform;
+use crate::io::file::read_image_from_file;
 use anyhow::anyhow;
-use image::{DynamicImage, GenericImageView, ImageFormat, ImageReader};
-use std::fs::File;
-use std::io::{BufReader, Cursor};
+use image::{DynamicImage, GenericImageView, ImageFormat};
+use std::io::Cursor;
 use std::num::NonZeroU8;
 
-pub fn compress(config: Option<&PngConfig>, input_file: &mut File) -> anyhow::Result<Vec<u8>> {
+pub fn compress(config: Option<&PngConfig>, input_path: &String) -> anyhow::Result<Vec<u8>> {
     let default_config = PngConfig::default();
     let (quality, strip, interlacing, optimize_alpha, size, libdeflater, zopfli, lossy) =
         match config {
@@ -33,12 +33,7 @@ pub fn compress(config: Option<&PngConfig>, input_file: &mut File) -> anyhow::Re
             ),
         };
 
-    let reader = BufReader::new(input_file);
-    let image_reader = ImageReader::new(reader)
-        .with_guessed_format()
-        .map_err(|e| anyhow!(CompressorError::ImageDecodeError(e.into())))?;
-
-    let mut dynamic_image = image_reader.decode()?;
+    let mut dynamic_image = read_image_from_file(input_path)?;
 
     if let Some(size_config) = size {
         dynamic_image = transform::resize_image(&dynamic_image, size_config);

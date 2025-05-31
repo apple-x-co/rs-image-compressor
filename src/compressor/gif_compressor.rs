@@ -10,7 +10,7 @@ use rgb::RGBA8;
 use std::fs::File;
 use std::io::{BufWriter, Cursor, Read};
 
-pub fn compress(config: Option<&GifConfig>, input_file: &mut File) -> Result<Vec<u8>> {
+pub fn compress(config: Option<&GifConfig>, input_path: &String) -> Result<Vec<u8>> {
     // 設定値の取得
     let default_config = GifConfig::default();
     let (quality, size, fast, loop_speed, loop_count) = match config {
@@ -29,6 +29,9 @@ pub fn compress(config: Option<&GifConfig>, input_file: &mut File) -> Result<Vec
             default_config.loop_count,
         ),
     };
+
+    let mut input_file = File::open(input_path)
+        .map_err(|e| anyhow!(CompressorError::IoError(e)))?;
 
     // ファイルの内容を読み込み
     let mut buffer = Vec::new();

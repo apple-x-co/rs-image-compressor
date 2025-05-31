@@ -7,12 +7,15 @@ use libheif_rs::{
 use std::fs::File;
 use std::io::{BufReader, Seek, SeekFrom};
 
-pub fn compress(config: Option<&HeifConfig>, input_file: File) -> anyhow::Result<Vec<u8>> {
+pub fn compress(config: Option<&HeifConfig>, input_path: &String) -> anyhow::Result<Vec<u8>> {
     let default_config = HeifConfig::default();
     let (quality, size) = match config {
         Some(config) => (config.quality, config.size.as_ref()),
         None => (default_config.quality, default_config.size.as_ref()),
     };
+
+    let input_file = File::open(input_path)
+        .map_err(|e| anyhow!(CompressorError::IoError(e)))?;
 
     let mut buf_reader = BufReader::new(input_file);
     let total_size = buf_reader.seek(SeekFrom::End(0))?;
