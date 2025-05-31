@@ -1,121 +1,55 @@
 # rs-image-compressor
 
-## Usage
+⚡ **高速で軽量な画像・文書圧縮ツール** - Rust製のマルチフォーマット対応コマンドラインアプリケーション
 
-```text
-rs-image-compressor --input <INPUT> --output <OUTPUT>
+## 🚀 概要
+
+`rs-image-compressor`は、様々な画像・文書ファイルを効率的に圧縮するRust製のコマンドラインツールです。高品質な圧縮アルゴリズムと豊富な設定オプションで、ファイルサイズを大幅に削減しながら品質を保持します。
+
+## 📦 対応フォーマット
+
+- **画像**: PNG, JPEG, WebP, GIF, HEIF/HEIC
+- **文書**: PDF, SVG/XML
+
+## ✨ 主な特徴
+
+- 🔧 **高度な設定**: JSONスキーマによる詳細な圧縮パラメータ設定
+- 🎯 **品質重視**: lossy/lossless圧縮の選択、品質レベルの細かい調整
+- 📏 **リサイズ機能**: 複数のフィルタアルゴリズム対応（Lanczos3, CatmullRom等）
+- 🖼️ **EXIF処理**: JPEG画像の自動回転、メタデータ保持/削除の選択
+- 📚 **PDF最適化**: 画像圧縮、フォント削除、メタデータクリーンアップ
+- 🎬 **GIF最適化**: フレーム最適化、ループ設定、品質調整
+- ⚡ **高速処理**: Rustの並列処理とメモリ効率性を活用
+- 🛡️ **安全性**: 型安全性とエラーハンドリングによる信頼性の高い処理
+
+## 🛠️ 技術スタック
+
+- **言語**: Rust 2024 Edition
+- **圧縮ライブラリ**: oxipng, mozjpeg, webp, gifski, libheif-rs
+- **画像処理**: image crate, imagequant
+- **PDF処理**: lopdf, lcms2（カラープロファイル変換）
+- **設定**: JSON Schema バリデーション
+
+## 📖 使用例
+
+```bash
+# 基本的な圧縮
+rs-image-compressor -i input.jpg -o output.jpg
+
+# 設定ファイルを使用した詳細圧縮
+rs-image-compressor -i input.png -o output.png -c config.json
+
+# 詳細ログ付き
+rs-image-compressor -i input.pdf -o output.pdf -v
 ```
 
-```text
-rs-image-compressor --input <INPUT> --output <OUTPUT> --config <CONFIG>
-```
+## 🎯 対象ユーザー
 
-```text
-rs-image-compressor --input <INPUT> --output <OUTPUT> --verbose
-```
+- Web開発者（画像最適化）
+- デザイナー（ファイルサイズ削減）
+- システム管理者（バッチ処理）
+- 文書管理（PDF最適化）
 
-## Config
+---
 
-👉 [JSON Schema](https://raw.githubusercontent.com/apple-x-co/rs-image-compressor/refs/heads/main/schema/schema.json)  
-👉 [See samples](https://github.com/apple-x-co/rs-image-compressor-benchmark)
-
-`PNG`
-
-|                         | Type    | Range    | Enum                                         | Default | Note     |
-|-------------------------|---------|----------|----------------------------------------------|---------|----------|
-| quality                 | Integer | 1 .. 6   | -                                            | 2       | 1: High  |
-| size.width              | Integer | -        | -                                            | -       |          |
-| size.height             | Integer | -        | -                                            | -       |          |
-| size.filter             | String  | -        | -                                            | -       |          |
-| strip                   | String  | -        | none<br/>safe<br/>all                        | all     |          |
-| interlacing             | String  | -        | none<br/>adam7                               | none    |          |
-| optimize_alpha          | Bool    | -        | -                                            | false   |          |
-| libdeflater.compression | Integer | 0 .. 12  | -                                            | -       | 12: High |
-| zopfli.iterations       | Integer | 1 .. 15  | -                                            | -       |          |
-| lossy.quality_min       | Integer | 0 .. 100 | -                                            | -       |          |
-| lossy.quality_max       | Integer | 0 .. 100 | -                                            | -       |          |
-| lossy.speed             | Integer | 1 .. 10  | -                                            | -       |          |
-| lossy.colors            | Integer | -        | 4<br/>8<br/>16<br/>32<br/>64<br/>128<br/>256 | -       |          |
-
-`JPEG`
-
-|                        | Type    | Range    | Enum                                                    | Default                 | Note      |
-|------------------------|---------|----------|---------------------------------------------------------|-------------------------|-----------|
-| quality                | Integer | 1 .. 100 | -                                                       | 70                      | 100: High |
-| size.width             | Integer | -        | -                                                       | -                       |           |
-| size.height            | Integer | -        | -                                                       | -                       |           |
-| size.filter            | String  | -        | -                                                       | -                       |           |
-| scan_optimization_mode | String  | -        | all_components_together<br/>scan_per_component<br/>auto | all_components_together |           |
-| progressive_mode       | Bool    | -        | -                                                       | false                   |           |
-| optimize_coding        | Bool    | -        | -                                                       | true                    |           |
-| use_scans_in_trellis   | Bool    | -        | -                                                       | false                   |           |
-| smoothing_factor       | Integer | 0 .. 100 | -                                                       | 0                       |           |
-| exif                   | String  | -        | none<br/>orientation<br/>all                            | none                    |           |
-
-`WebP`
-
-|                   | Type    | Range        | Enum | Default | Note                        |
-|-------------------|---------|--------------|------|---------|-----------------------------|
-| quality           | Integer | 1 .. 100     | -    | 75      | 100: High                   |
-| size.width        | Integer | -            | -    | -       |                             |
-| size.height       | Integer | -            | -    | -       |                             |
-| size.filter       | String  | -            | -    | -       |                             |
-| method            | Integer | 0 .. 6       | -    | -       | 6: High                     |
-| target_size       | Integer |              | -    | -       |                             |
-| target_psnr       | Integer | 25.0 .. 60.0 | -    | -       |                             |
-| lossless          | Bool    |              | -    | -       |                             |
-| alpha_compression | Bool    |              | -    | -       | false when lossless is true |
-| alpha_quality     | Integer | 0 .. 100     | -    | -       | 100: High                   |
-| pass              | Integer | 1 .. 100     | -    | -       |                             |
-| preprocessing     | Integer | 0 .. 7       | -    | -       |                             |
-| autofilter        | Bool    |              | -    | -       |                             |
-
-`GIF`
-
-|             | Type    | Range    | Enum | Default | Note      |
-|-------------|---------|----------|------|---------|-----------|
-| quality     | Integer | 1 .. 100 | -    | 75      | 100: High |
-| size.width  | Integer | -        | -    | -       |           |
-| size.height | Integer | -        | -    | -       |           |
-| size.filter | String  | -        | -    | -       |           |
-| fast        | Bool    | -        | -    | -       |           |
-| loop_count  | Integer | -        | -    | -       |           |
-| loop_speed  | Integer | -        | -    | -       |           |
-
-`HEIF`
-
-|                   | Type    | Range        | Enum | Default | Note                        |
-|-------------------|---------|--------------|------|---------|-----------------------------|
-| quality           | Integer | 1 .. 100     | -    | -       | 100: High                   |
-
-`PDF`
-
-|                    | Type    | Range    | Enum | Default | Note      |
-|--------------------|---------|----------|------|---------|-----------|
-| remove_info        | Bool    | -        | -    | true    | -         |
-| remove_metadata    | Bool    | -        | -    | true    | -         |
-| remove_unuse_fonts | Bool    | -        | -    | true    | -         |
-| png.min_quality    | Integer | 1 .. 100 | -    | 65      | 100: High |
-| png.max_quality    | Integer | 1 .. 100 | -    | 75      | 100: High |
-| jpeg.quality       | Integer | 1 .. 100 | -    | 70      | 100: High |
-| jpeg.max_length    | Integer | -        | -    | 1500    |           |
-
-## Supported Files
-
-* PNG
-  * [oxipng](https://github.com/shssoichiro/oxipng)
-  * [pngquant](https://pngquant.org)
-* JPEG
-  * [mozjpeg](https://github.com/mozilla/mozjpeg) ※ Only RGB
-* WebP
-  * [webp](https://github.com/jaredforth/webp)（wrapper for libwebp-sys）
-* Gif
-  * [gifski](https://github.com/ImageOptim/gifski)
-* SVG
-  * [usvg](https://github.com/linebender/resvg)
-* HEIF,HEIC
-  * [libheif-rs](https://github.com/cykooz/libheif-rs) (wrapper for libheif-sys)
-* PDF
-  * [lopdf](https://github.com/J-F-Liu/lopdf)
-  * [mozjpeg](https://github.com/mozilla/mozjpeg)
-  * [pngquant](https://pngquant.org)
+**軽量・高速・設定豊富** - あらゆる圧縮ニーズに対応する、次世代の画像・文書圧縮ツール
