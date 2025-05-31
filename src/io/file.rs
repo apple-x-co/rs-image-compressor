@@ -49,3 +49,10 @@ pub fn write_file_bytes(file_path: &str, data: &[u8]) -> Result<()> {
 
     Ok(())
 }
+
+pub fn get_file_size(file_path: &str) -> Result<u64> {
+    let metadata = std::fs::metadata(file_path)
+        .map_err(|e| CompressorError::IoError(e))?;
+
+    Ok(metadata.len())
+}

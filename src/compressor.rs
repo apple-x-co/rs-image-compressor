@@ -9,7 +9,7 @@ mod svg_compressor;
 use crate::config_json::Config;
 use crate::error::CompressorError;
 use crate::file_type::FileType;
-use crate::io::file::{detect_file_type, write_file_bytes};
+use crate::io::file::{detect_file_type, get_file_size, write_file_bytes};
 use anyhow::{anyhow, Result};
 use little_exif::exif_tag::ExifTag;
 use little_exif::filetype::FileExtension;
@@ -44,8 +44,9 @@ pub fn compress(
         println!("\n[Input]");
         println!("\tFile name: {}", input_file_name);
 
-        let metadata = File::open(input_path)?.metadata()?;
-        println!("\tSize: {} bytes", metadata.len());
+        if let Ok(file_size) = get_file_size(input_path) {
+            println!("\tSize: {} bytes", file_size);
+        }
     }
 
     // NOTE: Compress a file
@@ -303,12 +304,15 @@ pub fn compress(
     write_file_bytes(output_path, &compressed_data)?;
 
     if verbose {
-        let metadata = File::open(input_path)?.metadata()?;
-        let compressed_metadata = File::open(output_path)?.metadata()?;
         println!("\n[Result]");
-        println!("\tBefore: {} bytes", metadata.len());
-        println!("\tAfter: {} bytes", compressed_metadata.len());
-        println!("\tRatio: {:.2} %", (compressed_metadata.len() as f64 / metadata.len() as f64) * 100.0);
+
+        if let Ok(file_size) = get_file_size(input_path) {
+            println!("\tBefore: {} bytes", file_size);
+        }
+
+        if let Ok(file_size) = get_file_size(input_path) {
+            println!("\tAfter: {} bytes", file_size);
+        }
 
         println!("\n[Output]");
         println!("\tFile name: {}", output_file_name);
