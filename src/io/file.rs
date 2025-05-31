@@ -3,7 +3,7 @@ use crate::file_type::FileType;
 use image::DynamicImage;
 use image::ImageReader;
 use std::fs::File;
-use std::io::{BufReader, Read};
+use std::io::{BufReader, Read, Write};
 
 pub fn read_image_from_file(file_path: &str) -> Result<DynamicImage> {
     let file = File::open(file_path)
@@ -38,4 +38,14 @@ pub fn read_file_bytes(file_path: &str) -> Result<Vec<u8>> {
         .map_err(|e| CompressorError::IoError(e))?;
 
     Ok(buffer)
+}
+
+pub fn write_file_bytes(file_path: &str, data: &[u8]) -> Result<()> {
+    let mut file = File::create(file_path)
+        .map_err(|e| CompressorError::IoError(e))?;
+
+    file.write_all(data)
+        .map_err(|e| CompressorError::IoError(e))?;
+
+    Ok(())
 }

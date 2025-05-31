@@ -9,13 +9,13 @@ mod svg_compressor;
 use crate::config_json::Config;
 use crate::error::CompressorError;
 use crate::file_type::FileType;
-use crate::io::file::detect_file_type;
+use crate::io::file::{detect_file_type, write_file_bytes};
 use anyhow::{anyhow, Result};
 use little_exif::exif_tag::ExifTag;
 use little_exif::filetype::FileExtension;
 use little_exif::metadata::Metadata;
 use std::fs::File;
-use std::io::{Read, Seek, Write};
+use std::io::{Read, Seek};
 use std::path::Path;
 use std::time::Instant;
 
@@ -300,11 +300,7 @@ pub fn compress(
         }
     };
 
-    let mut output_file = File::create(output_path)
-        .map_err(|e| anyhow!(CompressorError::IoError(e)))?;
-    output_file
-        .write_all(&compressed_data)
-        .map_err(|e| anyhow!(CompressorError::IoError(e)))?;
+    write_file_bytes(output_path, &compressed_data)?;
 
     if verbose {
         let metadata = File::open(input_path)?.metadata()?;
